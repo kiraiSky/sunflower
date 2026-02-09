@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block content %}
+  <section class="hero">
+    <div>
+      <p class="eyebrow">Bem-vindo de volta</p>
+      <h1>Organize compras, stock e mercado num só lugar.</h1>
+      <p class="subhead">
+        O painel mostra um resumo rápido de fornecedores, encomendas, stock em falta e
+        a lista de mercado.
+      </p>
+    </div>
+    <div class="hero-card">
+      <div class="stat">
+        <div class="stat-label">Fornecedores</div>
+        <div class="stat-value">{{ suppliers }}</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Encomendas</div>
+        <div class="stat-value">{{ orders }}</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Stock baixo</div>
+        <div class="stat-value">{{ low_stock }}</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Itens na lista</div>
+        <div class="stat-value">{{ market }}</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="grid">
+    <a class="card" href="{{ url_for('suppliers') }}" data-sound="next">
+      <div class="card-icon">🤝</div>
+      <h3>Fornecedores</h3>
+      <p>Contactos, notas e parceiros preferidos.</p>
+    </a>
+    <a class="card" href="{{ url_for('items') }}" data-sound="next">
+      <div class="card-icon">🧾</div>
+      <h3>Itens</h3>
+      <p>Itens com fornecedor, tipo e zona.</p>
+    </a>
+    <a class="card" href="{{ url_for('orders') }}" data-sound="next">
+      <div class="card-icon">📦</div>
+      <h3>Encomendas</h3>
+      <p>Encomendas por fornecedor com filtros.</p>
+    </a>
+    <a class="card" href="{{ url_for('stock') }}" data-sound="next">
+      <div class="card-icon">🥕</div>
+      <h3>Stock</h3>
+      <p>Quantidades e alertas de baixo stock.</p>
+    </a>
+    <a class="card" href="{{ url_for('market') }}" data-sound="next">
+      <div class="card-icon">🛒</div>
+      <h3>Lista de Mercado</h3>
+      <p>Compras rápidas com confirmação.</p>
+    </a>
+  </section>
+
+  {% if user and user[2] == "admin" %}
+  <section class="panel">
+    <h2>Administração</h2>
+    <p>Repor dados de teste e voltar ao estado inicial.</p>
+    <form method="post" action="{{ url_for('admin_seed') }}">
+      <button
+        class="primary"
+        type="submit"
+        onclick="return confirm('Repor dados de teste?')"
+        data-sound="save"
+        data-toast="Dados de teste repostos"
+      >
+        Repor dados de teste
+      </button>
+    </form>
+  </section>
+  {% endif %}
+{% endblock %}

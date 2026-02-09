@@ -1,0 +1,317 @@
+{% extends "base.html" %}
+{% block content %}
+  <section class="page-header">
+    <div>
+      <h1>Itens</h1>
+      <p>Adicionar itens passo a passo.</p>
+    </div>
+    <div>
+      {% if show_list %}
+      <a class="pill toggle" href="{{ url_for('items') }}" data-sound="toggle">Esconder lista</a>
+      {% else %}
+      <a class="pill toggle" href="{{ url_for('items', show=1) }}" data-sound="toggle">Ver lista</a>
+      {% endif %}
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>Novo item</h2>
+    <form method="post" class="stepper" data-stepper>
+      <div class="step active" data-step="1">
+        <div class="step-card">
+          <div class="step-label">1</div>
+          <div>
+            <h3>Fornecedor</h3>
+            <p>Escolha o fornecedor deste item.</p>
+          </div>
+        </div>
+        <label>
+          Fornecedor
+          <select name="supplier_id" required>
+            <option value="">Selecione</option>
+            {% for s in suppliers %}
+            <option value="{{ s[0] }}">{{ s[1] }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <button type="button" class="primary next-btn" data-sound="next" data-toast="Avançar">
+          Continuar
+        </button>
+      </div>
+
+      <div class="step" data-step="2">
+        <div class="step-card">
+          <div class="step-label">2</div>
+          <div>
+            <h3>Nome do item</h3>
+            <p>Escreva o nome do item.</p>
+          </div>
+        </div>
+        <label>
+          Item
+          <input name="name" required />
+        </label>
+        <div class="step-actions">
+          <button type="button" class="pill toggle back-btn" data-sound="back">Voltar</button>
+          <button type="button" class="primary next-btn" data-sound="next" data-toast="Avançar">
+            Continuar
+          </button>
+        </div>
+      </div>
+
+      <div class="step" data-step="3">
+        <div class="step-card">
+          <div class="step-label">3</div>
+          <div>
+            <h3>Tipo</h3>
+            <p>Selecione um tipo existente.</p>
+          </div>
+        </div>
+        <label>
+          Tipo
+          <select name="item_type" required data-select-toggle="new_type">
+            <option value="">Selecione</option>
+            {% for t in types %}
+            <option value="{{ t }}">{{ t }}</option>
+            {% endfor %}
+            <option value="__new__">Criar novo...</option>
+          </select>
+        </label>
+        <label class="hidden" data-toggle-target="new_type">
+          Novo tipo
+          <input name="new_item_type" />
+        </label>
+        <div class="step-actions">
+          <button type="button" class="pill toggle back-btn" data-sound="back">Voltar</button>
+          <button type="button" class="primary next-btn" data-sound="next" data-toast="Avançar">
+            Continuar
+          </button>
+        </div>
+      </div>
+
+      <div class="step" data-step="4">
+        <div class="step-card">
+          <div class="step-label">4</div>
+          <div>
+            <h3>Zona</h3>
+            <p>Selecione a zona do item.</p>
+          </div>
+        </div>
+        <label>
+          Zona
+          <select name="item_zone" required data-select-toggle="new_zone">
+            <option value="">Selecione</option>
+            {% for z in zones %}
+            <option value="{{ z }}">{{ z }}</option>
+            {% endfor %}
+            <option value="__new__">Criar novo...</option>
+          </select>
+        </label>
+        <label class="hidden" data-toggle-target="new_zone">
+          Nova zona
+          <input name="new_item_zone" />
+        </label>
+        <div class="step-actions">
+          <button type="button" class="pill toggle back-btn" data-sound="back">Voltar</button>
+          <button type="button" class="primary next-btn" data-sound="next" data-toast="Avançar">
+            Continuar
+          </button>
+        </div>
+      </div>
+
+      <div class="step" data-step="5">
+        <div class="step-card">
+          <div class="step-label">5</div>
+          <div>
+            <h3>Unidade</h3>
+            <p>Selecione a unidade.</p>
+          </div>
+        </div>
+        <label>
+          Unidade
+          <select name="unit" required data-select-toggle="new_unit">
+            <option value="">Selecione</option>
+            {% for u in units %}
+            <option value="{{ u }}">{{ u }}</option>
+            {% endfor %}
+            <option value="__new__">Criar novo...</option>
+          </select>
+        </label>
+        <label class="hidden" data-toggle-target="new_unit">
+          Nova unidade
+          <input name="new_unit" />
+        </label>
+        <div class="step-actions">
+          <button type="button" class="pill toggle back-btn" data-sound="back">Voltar</button>
+          <button class="primary" type="submit" data-sound="save" data-toast="Item guardado">
+            Guardar item
+          </button>
+        </div>
+      </div>
+    </form>
+  </section>
+
+  {% if show_list %}
+  <section class="panel">
+    <h2>Itens registados</h2>
+    <form class="form grid-form" data-auto-filter>
+      <label>
+        Fornecedor
+        <select name="supplier_id" data-filter="supplier">
+          <option value="">Todos</option>
+          {% for s in suppliers %}
+          <option value="{{ s[0] }}" {% if supplier_filter|int == s[0] %}selected{% endif %}>
+            {{ s[1] }}
+          </option>
+          {% endfor %}
+        </select>
+      </label>
+      <label>
+        Mostrar
+        <div class="check-row">
+          <label class="check-pill">
+            <input
+              type="checkbox"
+              name="show_type"
+              value="1"
+              data-filter="type"
+              {% if show_type %}checked{% endif %}
+            />
+            Tipo
+          </label>
+          <label class="check-pill">
+            <input
+              type="checkbox"
+              name="show_zone"
+              value="1"
+              data-filter="zone"
+              {% if show_zone %}checked{% endif %}
+            />
+            Zona
+          </label>
+          <label class="check-pill">
+            <input
+              type="checkbox"
+              name="show_unit"
+              value="1"
+              data-filter="unit"
+              {% if show_unit %}checked{% endif %}
+            />
+            Unidade
+          </label>
+        </div>
+      </label>
+    </form>
+    <div class="table responsive-table" id="items-table"></div>
+  </section>
+  {% endif %}
+
+  <script>
+    const steps = document.querySelectorAll("[data-stepper] .step");
+    const toStep = (index) => {
+      steps.forEach((step, idx) => {
+        step.classList.toggle("active", idx === index);
+      });
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    };
+    steps.forEach((step, idx) => {
+      step.querySelectorAll(".next-btn").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const required = step.querySelectorAll("select[required], input[required]");
+          for (const field of required) {
+            if (!field.value) {
+              field.focus();
+              return;
+            }
+          }
+          toStep(Math.min(idx + 1, steps.length - 1));
+        });
+      });
+      step.querySelectorAll(".back-btn").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          toStep(Math.max(idx - 1, 0));
+        });
+      });
+    });
+
+    const toggles = document.querySelectorAll("[data-select-toggle]");
+    toggles.forEach((select) => {
+      const key = select.dataset.selectToggle;
+      const target = document.querySelector(`[data-toggle-target="${key}"]`);
+      const update = () => {
+        const show = select.value === "__new__";
+        target.classList.toggle("hidden", !show);
+        if (!show) {
+          const input = target.querySelector("input");
+          if (input) input.value = "";
+        }
+      };
+      select.addEventListener("change", update);
+      update();
+    });
+
+    const autoFilter = document.querySelector("[data-auto-filter]");
+    if (autoFilter) {
+      autoFilter.addEventListener("submit", (e) => e.preventDefault());
+      const table = document.getElementById("items-table");
+      const renderTable = (data) => {
+        const showType = autoFilter.querySelector('[data-filter="type"]').checked;
+        const showZone = autoFilter.querySelector('[data-filter="zone"]').checked;
+        const showUnit = autoFilter.querySelector('[data-filter="unit"]').checked;
+        const headCols = ["Fornecedor", "Número", "Item"];
+        if (showType) headCols.push("Tipo");
+        if (showZone) headCols.push("Zona");
+        if (showUnit) headCols.push("Unidade");
+
+        const head = document.createElement("div");
+        head.className = "table-row table-head";
+        headCols.forEach((label) => {
+          const cell = document.createElement("div");
+          cell.textContent = label;
+          head.appendChild(cell);
+        });
+
+        const rows = data.map((item) => {
+          const row = document.createElement("div");
+          row.className = "table-row";
+          const base = [item.supplier, item.phone, item.item];
+          const extra = [];
+          if (showType) extra.push(item.type);
+          if (showZone) extra.push(item.zone);
+          if (showUnit) extra.push(item.unit);
+          [...base, ...extra].forEach((value, index) => {
+            const cell = document.createElement("div");
+            cell.textContent = value || "—";
+            cell.setAttribute("data-label", headCols[index]);
+            row.appendChild(cell);
+          });
+          return row;
+        });
+
+        table.innerHTML = "";
+        table.appendChild(head);
+        if (rows.length === 0) {
+          const empty = document.createElement("div");
+          empty.className = "table-row empty";
+          empty.textContent = "Nenhum item registado.";
+          table.appendChild(empty);
+          return;
+        }
+        rows.forEach((row) => table.appendChild(row));
+      };
+
+      const fetchItems = () => {
+        const supplier = autoFilter.querySelector('[data-filter="supplier"]').value;
+        const url = new URL("{{ url_for('items_data') }}", window.location.origin);
+        if (supplier) url.searchParams.set("supplier_id", supplier);
+        fetch(url)
+          .then((res) => res.json())
+          .then((data) => renderTable(data))
+          .catch(() => {});
+      };
+
+      autoFilter.addEventListener("change", fetchItems);
+      fetchItems();
+    }
+  </script>
+{% endblock %}

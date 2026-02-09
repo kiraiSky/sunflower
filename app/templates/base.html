@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{{ title or "Gestor de Compras do Restaurante" }}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark">🌻</div>
+        <div class="brand-text">
+          <div class="brand-title">Gestor do Restaurante</div>
+          <div class="brand-subtitle">Compras, stock e lista de mercado</div>
+        </div>
+      </div>
+      {% if user %}
+      <div class="user-chip">
+        <span>{{ user[1] }} · {{ user[2] }}</span>
+        <a href="{{ url_for('logout') }}">Sair</a>
+      </div>
+      {% endif %}
+    </header>
+
+    {% if user %}
+    <div class="bottom-bar">
+      <button class="bottom-action" id="menu-toggle" aria-expanded="false" aria-controls="mobile-menu">
+        ☰
+        <span>Menu</span>
+      </button>
+      <a class="bottom-action" href="{{ url_for('index') }}" data-sound="toggle">
+        ⌂
+        <span>Início</span>
+      </a>
+    </div>
+    <nav class="mobile-menu" id="mobile-menu" aria-hidden="true">
+      <a href="{{ url_for('index') }}">Painel</a>
+      <a href="{{ url_for('suppliers') }}">Fornecedores</a>
+      <a href="{{ url_for('items') }}">Itens</a>
+      <a href="{{ url_for('orders') }}">Encomendas</a>
+      <a href="{{ url_for('stock') }}">Stock</a>
+      <a href="{{ url_for('market') }}">Lista</a>
+    </nav>
+    {% endif %}
+
+    <main class="page">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+      <div class="flash-list">
+        {% for category, message in messages %}
+        <div class="flash {{ category }}" data-flash="{{ message }}">{{ message }}</div>
+        {% endfor %}
+      </div>
+      {% endif %}
+      {% endwith %}
+
+      {% block content %}{% endblock %}
+    </main>
+
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+    <script>
+      const playTone = (freq = 360, duration = 0.05, type = "triangle") => {
+        try {
+          const ctx = new (window.AudioContext || window.webkitAudioContext)();
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = type;
+          osc.frequency.value = freq;
+          gain.gain.value = 0.025;
+          gain.gain.setValueAtTime(0.001, ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.025, ctx.currentTime + 0.01);
+          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start();
+          osc.stop(ctx.currentTime + duration);
+        } catch (err) {}
+      };
+
+      const toast = (message) => {
+        const el = document.getElementById("toast");
+        if (!el) return;
+        el.textContent = message;
+        el.classList.add("show");
+        window.clearTimeout(el._t);
+        el._t = window.setTimeout(() => el.classList.remove("show"), 1600);
+      };
+
+      document.addEventListener("click", (event) => {
+        const target = event.target.closest("button, a");
+        if (!target) return;
+        const sound = target.dataset.sound;
+        if (sound === "next") playTone(620, 0.06, "triangle");
+        if (sound === "back") playTone(420, 0.06, "triangle");
+        if (sound === "save") playTone(740, 0.1, "sine");
+        if (sound === "toggle") playTone(520, 0.05, "sine");
+        const msg = target.dataset.toast;
+        if (msg) toast(msg);
+      });
+
+      document.querySelectorAll("[data-flash]").forEach((el) => {
+        toast(el.dataset.flash);
+      });
+
+      const menuToggle = document.getElementById("menu-toggle");
+      const mobileMenu = document.getElementById("mobile-menu");
+      if (menuToggle && mobileMenu) {
+        menuToggle.addEventListener("click", () => {
+          const isOpen = mobileMenu.classList.toggle("open");
+          mobileMenu.setAttribute("aria-hidden", String(!isOpen));
+          menuToggle.setAttribute("aria-expanded", String(isOpen));
+        });
+      }
+    </script>
+  </body>
+</html>

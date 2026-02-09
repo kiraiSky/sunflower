@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block content %}
+  <section class="page-header">
+    <div>
+      <h1>Lista de Mercado</h1>
+      <p>Compras diárias e checklist rápido.</p>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>Novo item</h2>
+    <form method="post" class="form grid-form">
+      <label>
+        Item
+        <input name="item" required />
+      </label>
+      <label>
+        Quantidade
+        <input name="qty" />
+      </label>
+      <label class="full">
+        Notas
+        <textarea name="notes" rows="2"></textarea>
+      </label>
+      <button class="primary" type="submit">Adicionar à lista</button>
+    </form>
+  </section>
+
+  <section class="panel">
+    <h2>Lista atual</h2>
+    <div class="table">
+      <div class="table-row table-head">
+        <div>Item</div>
+        <div>Qtd</div>
+        <div>Notas</div>
+        <div>Feito</div>
+      </div>
+      {% for m in market_items %}
+      <div class="table-row">
+        <div class="{% if m[4] %}checked{% endif %}">{{ m[1] }}</div>
+        <div class="{% if m[4] %}checked{% endif %}">{{ m[2] }}</div>
+        <div class="{% if m[4] %}checked{% endif %}">{{ m[3] }}</div>
+        <div>
+          <a class="pill toggle" href="{{ url_for('market_toggle', item_id=m[0]) }}">
+            {% if m[4] %}Desfazer{% else %}Feito{% endif %}
+          </a>
+        </div>
+      </div>
+      {% else %}
+      <div class="table-row empty">Ainda não existem itens na lista.</div>
+      {% endfor %}
+    </div>
+  </section>
+{% endblock %}
