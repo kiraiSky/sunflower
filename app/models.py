@@ -56,7 +56,13 @@ CREATE TABLE IF NOT EXISTS market_list (
     item TEXT NOT NULL,
     qty TEXT,
     notes TEXT,
-    checked INTEGER NOT NULL DEFAULT 0
+    checked INTEGER NOT NULL DEFAULT 0,
+    item_id INTEGER,
+    order_id INTEGER,
+    qty_value REAL,
+    unit TEXT,
+    listed_at TEXT,
+    purchased_at TEXT
 );
 """
 
@@ -93,3 +99,18 @@ def migrate_db(conn):
         conn.execute("ALTER TABLE orders ADD COLUMN qty REAL NOT NULL DEFAULT 0")
     if "item_id" not in col_names:
         conn.execute("ALTER TABLE orders ADD COLUMN item_id INTEGER")
+
+    market_columns = conn.execute("PRAGMA table_info(market_list)").fetchall()
+    market_col_names = {col[1] for col in market_columns}
+    if "item_id" not in market_col_names:
+        conn.execute("ALTER TABLE market_list ADD COLUMN item_id INTEGER")
+    if "order_id" not in market_col_names:
+        conn.execute("ALTER TABLE market_list ADD COLUMN order_id INTEGER")
+    if "qty_value" not in market_col_names:
+        conn.execute("ALTER TABLE market_list ADD COLUMN qty_value REAL")
+    if "unit" not in market_col_names:
+        conn.execute("ALTER TABLE market_list ADD COLUMN unit TEXT")
+    if "listed_at" not in market_col_names:
+        conn.execute("ALTER TABLE market_list ADD COLUMN listed_at TEXT")
+    if "purchased_at" not in market_col_names:
+        conn.execute("ALTER TABLE market_list ADD COLUMN purchased_at TEXT")

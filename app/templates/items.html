@@ -3,7 +3,7 @@
   <section class="page-header">
     <div>
       <h1>Itens</h1>
-      <p>Adicionar itens passo a passo.</p>
+      <p>Adicionar itens passo a passo com validacao e padronizacao.</p>
     </div>
     <div>
       {% if show_list %}
@@ -13,6 +13,17 @@
       {% endif %}
     </div>
   </section>
+
+  {% if created %}
+  <section class="panel save-summary">
+    <h2>Item criado</h2>
+    <p><strong>{{ created_name }}</strong> em <strong>{{ created_group }}</strong> / <strong>{{ created_zone }}</strong>.</p>
+    <div class="step-actions">
+      <a class="pill toggle" href="{{ url_for('items') }}" data-sound="toggle">Criar outro</a>
+      <a class="primary" href="{{ url_for('items', show=1) }}" data-sound="next">Ver lista</a>
+    </div>
+  </section>
+  {% endif %}
 
   <section class="panel">
     <h2>Novo item</h2>
@@ -34,7 +45,8 @@
             {% endfor %}
           </select>
         </label>
-        <button type="button" class="primary next-btn" data-sound="next" data-toast="Avançar">
+        <p class="step-error" data-step-error></p>
+        <button type="button" class="primary next-btn" data-sound="next" data-toast="Avancar">
           Continuar
         </button>
       </div>
@@ -44,16 +56,18 @@
           <div class="step-label">2</div>
           <div>
             <h3>Nome do item</h3>
-            <p>Escreva o nome do item.</p>
+            <p>Escreva o nome e verifique duplicados.</p>
           </div>
         </div>
         <label>
           Item
-          <input name="name" required />
+          <input name="name" required data-item-name />
         </label>
+        <p class="inline-warning hidden" id="duplicate-warning"></p>
+        <p class="step-error" data-step-error></p>
         <div class="step-actions">
           <button type="button" class="pill toggle back-btn" data-sound="back">Voltar</button>
-          <button type="button" class="primary next-btn" data-sound="next" data-toast="Avançar">
+          <button type="button" class="primary next-btn" data-sound="next" data-toast="Avancar">
             Continuar
           </button>
         </div>
@@ -63,27 +77,29 @@
         <div class="step-card">
           <div class="step-label">3</div>
           <div>
-            <h3>Tipo</h3>
-            <p>Selecione um tipo existente.</p>
+            <h3>Grupo</h3>
+            <p>Selecione o grupo principal do item.</p>
           </div>
         </div>
+        <div class="quick-picks" data-recent-groups></div>
         <label>
-          Tipo
-          <select name="item_type" required data-select-toggle="new_type">
+          Grupo
+          <select name="item_group" required data-select-toggle="new_group" data-group-select>
             <option value="">Selecione</option>
-            {% for t in types %}
-            <option value="{{ t }}">{{ t }}</option>
+            {% for g in groups %}
+            <option value="{{ g }}">{{ g }}</option>
             {% endfor %}
             <option value="__new__">Criar novo...</option>
           </select>
         </label>
-        <label class="hidden" data-toggle-target="new_type">
-          Novo tipo
-          <input name="new_item_type" />
+        <label class="hidden" data-toggle-target="new_group">
+          Novo grupo
+          <input name="new_item_group" />
         </label>
+        <p class="step-error" data-step-error></p>
         <div class="step-actions">
           <button type="button" class="pill toggle back-btn" data-sound="back">Voltar</button>
-          <button type="button" class="primary next-btn" data-sound="next" data-toast="Avançar">
+          <button type="button" class="primary next-btn" data-sound="next" data-toast="Avancar">
             Continuar
           </button>
         </div>
@@ -94,12 +110,14 @@
           <div class="step-label">4</div>
           <div>
             <h3>Zona</h3>
-            <p>Selecione a zona do item.</p>
+            <p>Selecione a zona de armazenamento.</p>
           </div>
         </div>
+        <div class="quick-picks" data-recent-zones></div>
+        <p class="help-text" id="zone-suggestion"></p>
         <label>
           Zona
-          <select name="item_zone" required data-select-toggle="new_zone">
+          <select name="item_zone" required data-select-toggle="new_zone" data-zone-select>
             <option value="">Selecione</option>
             {% for z in zones %}
             <option value="{{ z }}">{{ z }}</option>
@@ -111,9 +129,10 @@
           Nova zona
           <input name="new_item_zone" />
         </label>
+        <p class="step-error" data-step-error></p>
         <div class="step-actions">
           <button type="button" class="pill toggle back-btn" data-sound="back">Voltar</button>
-          <button type="button" class="primary next-btn" data-sound="next" data-toast="Avançar">
+          <button type="button" class="primary next-btn" data-sound="next" data-toast="Avancar">
             Continuar
           </button>
         </div>
@@ -141,6 +160,7 @@
           Nova unidade
           <input name="new_unit" />
         </label>
+        <p class="step-error" data-step-error></p>
         <div class="step-actions">
           <button type="button" class="pill toggle back-btn" data-sound="back">Voltar</button>
           <button class="primary" type="submit" data-sound="save" data-toast="Item guardado">
@@ -154,7 +174,12 @@
   {% if show_list %}
   <section class="panel">
     <h2>Itens registados</h2>
+
     <form class="form grid-form" data-auto-filter>
+      <label>
+        Pesquisa
+        <input type="search" name="search" data-filter="search" placeholder="Nome do item" />
+      </label>
       <label>
         Fornecedor
         <select name="supplier_id" data-filter="supplier">
@@ -167,75 +192,153 @@
         </select>
       </label>
       <label>
-        Mostrar
+        Grupo
+        <select name="group" data-filter="group">
+          <option value="">Todos</option>
+          {% for g in groups %}
+          <option value="{{ g }}">{{ g }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label>
+        Zona
+        <select name="zone" data-filter="zone">
+          <option value="">Todas</option>
+          {% for z in zones %}
+          <option value="{{ z }}">{{ z }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label>
+        Estado
+        <select name="active" data-filter="active">
+          <option value="">Todos</option>
+          <option value="1">Ativo</option>
+          <option value="0">Inativo</option>
+        </select>
+      </label>
+      <label>
+        Mostrar colunas
         <div class="check-row">
-          <label class="check-pill">
-            <input
-              type="checkbox"
-              name="show_type"
-              value="1"
-              data-filter="type"
-              {% if show_type %}checked{% endif %}
-            />
-            Tipo
-          </label>
-          <label class="check-pill">
-            <input
-              type="checkbox"
-              name="show_zone"
-              value="1"
-              data-filter="zone"
-              {% if show_zone %}checked{% endif %}
-            />
-            Zona
-          </label>
-          <label class="check-pill">
-            <input
-              type="checkbox"
-              name="show_unit"
-              value="1"
-              data-filter="unit"
-              {% if show_unit %}checked{% endif %}
-            />
-            Unidade
-          </label>
+          <label class="check-pill"><input type="checkbox" data-filter="show-group" {% if show_type %}checked{% endif %}/>Grupo</label>
+          <label class="check-pill"><input type="checkbox" data-filter="show-zone" {% if show_zone %}checked{% endif %}/>Zona</label>
+          <label class="check-pill"><input type="checkbox" data-filter="show-unit" {% if show_unit %}checked{% endif %}/>Unidade</label>
+          <label class="check-pill"><input type="checkbox" data-filter="show-active" {% if show_active %}checked{% endif %}/>Estado</label>
         </div>
       </label>
     </form>
+
+    <div class="bulk-actions" data-bulk-actions>
+      <label>
+        Grupo em lote
+        <select data-bulk="group">
+          <option value="">Sem alteracao</option>
+          {% for g in groups %}<option value="{{ g }}">{{ g }}</option>{% endfor %}
+        </select>
+      </label>
+      <label>
+        Zona em lote
+        <select data-bulk="zone">
+          <option value="">Sem alteracao</option>
+          {% for z in zones %}<option value="{{ z }}">{{ z }}</option>{% endfor %}
+        </select>
+      </label>
+      <label>
+        Unidade em lote
+        <input data-bulk="unit" placeholder="ex: kg" />
+      </label>
+      <label>
+        Estado em lote
+        <select data-bulk="active">
+          <option value="">Sem alteracao</option>
+          <option value="1">Ativo</option>
+          <option value="0">Inativo</option>
+        </select>
+      </label>
+      <button type="button" class="primary" data-bulk-apply>Aplicar aos selecionados</button>
+    </div>
+
     <div class="table responsive-table" id="items-table"></div>
   </section>
   {% endif %}
 
   <script>
+    const groupZoneMap = {{ group_zone_map|tojson }};
+    const groups = {{ groups|tojson }};
+    const zones = {{ zones|tojson }};
+    const units = {{ units|tojson }};
+
+    const form = document.querySelector("[data-stepper]");
     const steps = document.querySelectorAll("[data-stepper] .step");
+    const supplierSelect = form?.querySelector('select[name="supplier_id"]');
+    const itemNameInput = form?.querySelector('[data-item-name]');
+    const groupSelect = form?.querySelector('[data-group-select]');
+    const zoneSelect = form?.querySelector('[data-zone-select]');
+    const duplicateWarning = document.getElementById("duplicate-warning");
+    const zoneSuggestion = document.getElementById("zone-suggestion");
+
+    const getRealValue = (selectName, customName) => {
+      const select = form?.querySelector(`[name="${selectName}"]`);
+      const custom = form?.querySelector(`[name="${customName}"]`);
+      if (!select) return "";
+      if (select.value === "__new__") return (custom?.value || "").trim();
+      return (select.value || "").trim();
+    };
+
+    const showStepError = (step, message) => {
+      const el = step.querySelector("[data-step-error]");
+      if (!el) return;
+      el.textContent = message || "";
+      el.classList.toggle("visible", Boolean(message));
+    };
+
+    const validateStep = (step) => {
+      showStepError(step, "");
+      const required = step.querySelectorAll("select[required], input[required]");
+      for (const field of required) {
+        const isSelect = field.tagName === "SELECT";
+        const value = (field.value || "").trim();
+        if (!value) {
+          showStepError(step, "Preencha os campos obrigatorios antes de continuar.");
+          field.focus();
+          return false;
+        }
+        if (isSelect && value === "__new__") {
+          const key = field.dataset.selectToggle;
+          const customInput = document.querySelector(`[data-toggle-target="${key}"] input`);
+          if (!customInput || !customInput.value.trim()) {
+            showStepError(step, "Preencha o novo valor para continuar.");
+            customInput?.focus();
+            return false;
+          }
+        }
+      }
+      return true;
+    };
+
     const toStep = (index) => {
       steps.forEach((step, idx) => {
         step.classList.toggle("active", idx === index);
       });
       window.scrollTo({ top: 0, behavior: "smooth" });
     };
+
     steps.forEach((step, idx) => {
       step.querySelectorAll(".next-btn").forEach((btn) => {
         btn.addEventListener("click", () => {
-          const required = step.querySelectorAll("select[required], input[required]");
-          for (const field of required) {
-            if (!field.value) {
-              field.focus();
-              return;
-            }
-          }
+          if (!validateStep(step)) return;
           toStep(Math.min(idx + 1, steps.length - 1));
         });
       });
       step.querySelectorAll(".back-btn").forEach((btn) => {
         btn.addEventListener("click", () => {
+          showStepError(step, "");
           toStep(Math.max(idx - 1, 0));
         });
       });
     });
 
-    const toggles = document.querySelectorAll("[data-select-toggle]");
-    toggles.forEach((select) => {
+    document.querySelectorAll("[data-select-toggle]").forEach((select) => {
       const key = select.dataset.selectToggle;
       const target = document.querySelector(`[data-toggle-target="${key}"]`);
       const update = () => {
@@ -250,65 +353,314 @@
       update();
     });
 
+    const updateZoneSuggestion = () => {
+      const selectedGroup = getRealValue("item_group", "new_item_group");
+      const suggested = groupZoneMap[selectedGroup] || [];
+      if (!zoneSuggestion) return;
+      if (!suggested.length) {
+        zoneSuggestion.textContent = "";
+        return;
+      }
+      zoneSuggestion.textContent = `Sugestao para ${selectedGroup}: ${suggested.join(", ")}`;
+      const currentZone = getRealValue("item_zone", "new_item_zone");
+      if (!currentZone && zoneSelect && suggested[0]) {
+        zoneSelect.value = suggested[0];
+      }
+    };
+
+    groupSelect?.addEventListener("change", updateZoneSuggestion);
+    updateZoneSuggestion();
+
+    const checkDuplicate = () => {
+      const supplierId = supplierSelect?.value;
+      const name = itemNameInput?.value?.trim();
+      if (!supplierId || !name) {
+        duplicateWarning?.classList.add("hidden");
+        duplicateWarning.textContent = "";
+        return Promise.resolve(false);
+      }
+      const url = new URL("{{ url_for('items_check_duplicate') }}", window.location.origin);
+      url.searchParams.set("supplier_id", supplierId);
+      url.searchParams.set("name", name);
+      return fetch(url)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.exists) {
+            duplicateWarning.textContent = `Ja existe: ${data.item.name} (${data.item.group} / ${data.item.zone}).`;
+            duplicateWarning.classList.remove("hidden");
+            return true;
+          }
+          duplicateWarning.textContent = "";
+          duplicateWarning.classList.add("hidden");
+          return false;
+        })
+        .catch(() => false);
+    };
+
+    let duplicateTimer = null;
+    const debounceDuplicate = () => {
+      window.clearTimeout(duplicateTimer);
+      duplicateTimer = window.setTimeout(checkDuplicate, 300);
+    };
+
+    supplierSelect?.addEventListener("change", debounceDuplicate);
+    itemNameInput?.addEventListener("input", debounceDuplicate);
+    itemNameInput?.addEventListener("blur", checkDuplicate);
+
+    const RECENT_GROUPS_KEY = "items_recent_groups";
+    const RECENT_ZONES_KEY = "items_recent_zones";
+
+    const getRecent = (key) => {
+      try {
+        return JSON.parse(localStorage.getItem(key) || "[]");
+      } catch {
+        return [];
+      }
+    };
+
+    const saveRecent = (key, value) => {
+      if (!value) return;
+      const list = getRecent(key).filter((x) => x !== value);
+      list.unshift(value);
+      localStorage.setItem(key, JSON.stringify(list.slice(0, 5)));
+    };
+
+    const renderQuickPicks = (selector, key, onPick) => {
+      const host = document.querySelector(selector);
+      if (!host) return;
+      const values = getRecent(key);
+      if (!values.length) {
+        host.innerHTML = "";
+        return;
+      }
+      host.innerHTML = `<span class="help-text">Recentes:</span>` + values
+        .map((v) => `<button type="button" class="pill toggle" data-quick="${v}">${v}</button>`)
+        .join("");
+      host.querySelectorAll("[data-quick]").forEach((btn) => {
+        btn.addEventListener("click", () => onPick(btn.dataset.quick));
+      });
+    };
+
+    renderQuickPicks("[data-recent-groups]", RECENT_GROUPS_KEY, (value) => {
+      if (!groupSelect) return;
+      groupSelect.value = value;
+      groupSelect.dispatchEvent(new Event("change"));
+    });
+    renderQuickPicks("[data-recent-zones]", RECENT_ZONES_KEY, (value) => {
+      if (!zoneSelect) return;
+      zoneSelect.value = value;
+      zoneSelect.dispatchEvent(new Event("change"));
+    });
+
+    form?.addEventListener("submit", async (e) => {
+      const lastStep = steps[steps.length - 1];
+      if (!validateStep(lastStep)) {
+        e.preventDefault();
+        return;
+      }
+      const duplicate = await checkDuplicate();
+      if (duplicate) {
+        e.preventDefault();
+        showStepError(steps[1], "Ja existe um item com este nome para esse fornecedor.");
+        toStep(1);
+        return;
+      }
+      saveRecent(RECENT_GROUPS_KEY, getRealValue("item_group", "new_item_group"));
+      saveRecent(RECENT_ZONES_KEY, getRealValue("item_zone", "new_item_zone"));
+    });
+
     const autoFilter = document.querySelector("[data-auto-filter]");
     if (autoFilter) {
-      autoFilter.addEventListener("submit", (e) => e.preventDefault());
       const table = document.getElementById("items-table");
+      const bulkApplyBtn = document.querySelector("[data-bulk-apply]");
+
+      const selectedIds = new Set();
+
+      const getFilterState = () => ({
+        supplier: autoFilter.querySelector('[data-filter="supplier"]').value,
+        group: autoFilter.querySelector('[data-filter="group"]').value,
+        zone: autoFilter.querySelector('[data-filter="zone"]').value,
+        active: autoFilter.querySelector('[data-filter="active"]').value,
+        search: autoFilter.querySelector('[data-filter="search"]').value.trim(),
+        showGroup: autoFilter.querySelector('[data-filter="show-group"]').checked,
+        showZone: autoFilter.querySelector('[data-filter="show-zone"]').checked,
+        showUnit: autoFilter.querySelector('[data-filter="show-unit"]').checked,
+        showActive: autoFilter.querySelector('[data-filter="show-active"]').checked,
+      });
+
       const renderTable = (data) => {
-        const showType = autoFilter.querySelector('[data-filter="type"]').checked;
-        const showZone = autoFilter.querySelector('[data-filter="zone"]').checked;
-        const showUnit = autoFilter.querySelector('[data-filter="unit"]').checked;
-        const headCols = ["Fornecedor", "Número", "Item"];
-        if (showType) headCols.push("Tipo");
-        if (showZone) headCols.push("Zona");
-        if (showUnit) headCols.push("Unidade");
+        const st = getFilterState();
+        const headCols = ["", "Fornecedor", "Numero", "Item"];
+        if (st.showGroup) headCols.push("Grupo");
+        if (st.showZone) headCols.push("Zona");
+        if (st.showUnit) headCols.push("Unidade");
+        if (st.showActive) headCols.push("Estado");
+        headCols.push("Acoes");
 
         const head = document.createElement("div");
         head.className = "table-row table-head";
-        headCols.forEach((label) => {
+        headCols.forEach((label, idx) => {
           const cell = document.createElement("div");
-          cell.textContent = label;
+          if (idx === 0) {
+            cell.innerHTML = '<input type="checkbox" data-select-all />';
+          } else {
+            cell.textContent = label;
+          }
           head.appendChild(cell);
-        });
-
-        const rows = data.map((item) => {
-          const row = document.createElement("div");
-          row.className = "table-row";
-          const base = [item.supplier, item.phone, item.item];
-          const extra = [];
-          if (showType) extra.push(item.type);
-          if (showZone) extra.push(item.zone);
-          if (showUnit) extra.push(item.unit);
-          [...base, ...extra].forEach((value, index) => {
-            const cell = document.createElement("div");
-            cell.textContent = value || "—";
-            cell.setAttribute("data-label", headCols[index]);
-            row.appendChild(cell);
-          });
-          return row;
         });
 
         table.innerHTML = "";
         table.appendChild(head);
-        if (rows.length === 0) {
+
+        if (data.length === 0) {
           const empty = document.createElement("div");
           empty.className = "table-row empty";
           empty.textContent = "Nenhum item registado.";
           table.appendChild(empty);
           return;
         }
-        rows.forEach((row) => table.appendChild(row));
+
+        data.forEach((item) => {
+          const row = document.createElement("div");
+          row.className = "table-row";
+
+          const cells = [];
+          cells.push(`<input type="checkbox" data-select-item value="${item.id}" ${selectedIds.has(item.id) ? "checked" : ""} />`);
+          cells.push(item.supplier || "-");
+          cells.push(item.phone || "-");
+          cells.push(item.item || "-");
+
+          if (st.showGroup) {
+            cells.push(`<select data-edit="group" data-id="${item.id}">${groups
+              .map((g) => `<option value="${g}" ${g === item.group ? "selected" : ""}>${g}</option>`)
+              .join("")}</select>`);
+          }
+          if (st.showZone) {
+            cells.push(`<select data-edit="zone" data-id="${item.id}">${zones
+              .map((z) => `<option value="${z}" ${z === item.zone ? "selected" : ""}>${z}</option>`)
+              .join("")}</select>`);
+          }
+          if (st.showUnit) {
+            cells.push(`<input data-edit="unit" data-id="${item.id}" value="${item.unit || ""}" />`);
+          }
+          if (st.showActive) {
+            cells.push(`<label class="check-pill"><input type="checkbox" data-edit="active" data-id="${item.id}" ${item.active ? "checked" : ""}/> ${item.active ? "Ativo" : "Inativo"}</label>`);
+          }
+
+          cells.push(`<button type="button" class="pill toggle" data-save-row="${item.id}">Guardar</button>`);
+
+          cells.forEach((value, index) => {
+            const cell = document.createElement("div");
+            if (typeof value === "string" && value.includes("<")) {
+              cell.innerHTML = value;
+            } else {
+              cell.textContent = value;
+            }
+            cell.setAttribute("data-label", headCols[index]);
+            row.appendChild(cell);
+          });
+
+          table.appendChild(row);
+        });
+
+        table.querySelector("[data-select-all]")?.addEventListener("change", (e) => {
+          table.querySelectorAll("[data-select-item]").forEach((cb) => {
+            cb.checked = e.target.checked;
+            const id = Number(cb.value);
+            if (cb.checked) selectedIds.add(id);
+            else selectedIds.delete(id);
+          });
+        });
+
+        table.querySelectorAll("[data-select-item]").forEach((cb) => {
+          cb.addEventListener("change", () => {
+            const id = Number(cb.value);
+            if (cb.checked) selectedIds.add(id);
+            else selectedIds.delete(id);
+          });
+        });
+
+        table.querySelectorAll("[data-save-row]").forEach((btn) => {
+          btn.addEventListener("click", () => saveRow(Number(btn.dataset.saveRow)));
+        });
       };
 
       const fetchItems = () => {
-        const supplier = autoFilter.querySelector('[data-filter="supplier"]').value;
+        const st = getFilterState();
         const url = new URL("{{ url_for('items_data') }}", window.location.origin);
-        if (supplier) url.searchParams.set("supplier_id", supplier);
+        if (st.supplier) url.searchParams.set("supplier_id", st.supplier);
+        if (st.group) url.searchParams.set("group", st.group);
+        if (st.zone) url.searchParams.set("zone", st.zone);
+        if (st.active) url.searchParams.set("active", st.active);
+        if (st.search) url.searchParams.set("search", st.search);
         fetch(url)
           .then((res) => res.json())
           .then((data) => renderTable(data))
           .catch(() => {});
       };
+
+      const saveRow = (id) => {
+        const payload = {};
+        const groupField = table.querySelector(`[data-edit="group"][data-id="${id}"]`);
+        const zoneField = table.querySelector(`[data-edit="zone"][data-id="${id}"]`);
+        const unitField = table.querySelector(`[data-edit="unit"][data-id="${id}"]`);
+        const activeField = table.querySelector(`[data-edit="active"][data-id="${id}"]`);
+
+        if (groupField) payload.group = groupField.value;
+        if (zoneField) payload.zone = zoneField.value;
+        if (unitField) payload.unit = unitField.value;
+        if (activeField) payload.active = activeField.checked ? 1 : 0;
+
+        fetch(`/items/${id}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        })
+          .then((res) => res.json())
+          .then((data) => {
+            if (!data.ok) throw new Error(data.error || "Erro");
+            fetchItems();
+          })
+          .catch(() => {});
+      };
+
+      bulkApplyBtn?.addEventListener("click", () => {
+        const ids = [...selectedIds];
+        if (!ids.length) return;
+
+        const payload = {
+          ids,
+          group: document.querySelector('[data-bulk="group"]').value,
+          zone: document.querySelector('[data-bulk="zone"]').value,
+          unit: document.querySelector('[data-bulk="unit"]').value,
+          active: document.querySelector('[data-bulk="active"]').value,
+        };
+
+        fetch("{{ url_for('items_bulk_update') }}", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        })
+          .then((res) => res.json())
+          .then((data) => {
+            if (!data.ok) throw new Error(data.error || "Erro");
+            selectedIds.clear();
+            fetchItems();
+          })
+          .catch(() => {});
+      });
+
+      let searchTimer = null;
+      autoFilter.querySelector('[data-filter="search"]').addEventListener("input", () => {
+        window.clearTimeout(searchTimer);
+        searchTimer = window.setTimeout(fetchItems, 250);
+      });
+
+      autoFilter.addEventListener("submit", (e) => {
+        e.preventDefault();
+        window.clearTimeout(searchTimer);
+        fetchItems();
+      });
 
       autoFilter.addEventListener("change", fetchItems);
       fetchItems();

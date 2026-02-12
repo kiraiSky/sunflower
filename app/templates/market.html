@@ -3,52 +3,62 @@
   <section class="page-header">
     <div>
       <h1>Lista de Mercado</h1>
-      <p>Compras diárias e checklist rápido.</p>
+      <p>Toque num item em falta para movelo para Comprado. Se precisar, toque novamente em Comprado para voltar para Em falta.</p>
     </div>
   </section>
 
   <section class="panel">
-    <h2>Novo item</h2>
-    <form method="post" class="form grid-form">
-      <label>
-        Item
-        <input name="item" required />
-      </label>
-      <label>
-        Quantidade
-        <input name="qty" />
-      </label>
-      <label class="full">
-        Notas
-        <textarea name="notes" rows="2"></textarea>
-      </label>
-      <button class="primary" type="submit">Adicionar à lista</button>
-    </form>
-  </section>
-
-  <section class="panel">
-    <h2>Lista atual</h2>
-    <div class="table">
-      <div class="table-row table-head">
-        <div>Item</div>
-        <div>Qtd</div>
-        <div>Notas</div>
-        <div>Feito</div>
-      </div>
-      {% for m in market_items %}
-      <div class="table-row">
-        <div class="{% if m[4] %}checked{% endif %}">{{ m[1] }}</div>
-        <div class="{% if m[4] %}checked{% endif %}">{{ m[2] }}</div>
-        <div class="{% if m[4] %}checked{% endif %}">{{ m[3] }}</div>
-        <div>
-          <a class="pill toggle" href="{{ url_for('market_toggle', item_id=m[0]) }}">
-            {% if m[4] %}Desfazer{% else %}Feito{% endif %}
-          </a>
-        </div>
-      </div>
+    <h2>Em falta</h2>
+    <div class="market-card-grid">
+      {% for m in missing_items %}
+      <a class="market-order-card market-order-missing" href="{{ url_for('market_toggle', entry_id=m[0]) }}" data-sound="save">
+        <h3>{{ m[1] }}</h3>
+        <p>{{ "%.2f"|format(m[2]) }} {{ m[3] }}</p>
+        <small data-market-relative data-date="{{ m[4] }}"></small>
+      </a>
       {% else %}
-      <div class="table-row empty">Ainda não existem itens na lista.</div>
+      <div class="table-row empty">Nao ha itens em falta no Mercado.</div>
       {% endfor %}
     </div>
   </section>
+
+  <section class="panel">
+    <h2>Comprado</h2>
+    <div class="market-card-grid">
+      {% for m in purchased_items %}
+      <a class="market-order-card market-order-purchased" href="{{ url_for('market_toggle', entry_id=m[0]) }}" data-sound="toggle">
+        <h3>{{ m[1] }}</h3>
+        <p>{{ "%.2f"|format(m[2]) }} {{ m[3] }}</p>
+        <small data-market-relative data-date="{{ m[4] }}"></small>
+      </a>
+      {% else %}
+      <div class="table-row empty">Nada comprado ainda.</div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <script>
+    const relativeMarketDate = (value) => {
+      if (!value) return "sem data";
+      const target = new Date(`${value}T00:00:00`);
+      if (Number.isNaN(target.getTime())) return value;
+
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const diffMs = today.getTime() - target.getTime();
+      const diffDays = Math.max(0, Math.floor(diffMs / 86400000));
+
+      if (diffDays === 0) return "hoje";
+      if (diffDays === 1) return "ontem";
+      if (diffDays < 7) return `ha ${diffDays} dias`;
+      if (diffDays < 14) return "ha 1 semana";
+      if (diffDays < 30) return `ha ${Math.floor(diffDays / 7)} semanas`;
+      if (diffDays < 60) return "ha 1 mes";
+      return `ha ${Math.floor(diffDays / 30)} meses`;
+    };
+
+    document.querySelectorAll("[data-market-relative]").forEach((el) => {
+      el.textContent = relativeMarketDate(el.dataset.date || "");
+    });
+  </script>
 {% endblock %}

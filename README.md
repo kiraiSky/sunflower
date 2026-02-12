@@ -35,3 +35,11 @@ Notes
 - Default admin user is created on first run:
   - username: admin
   - password: admin
+
+Future TODO (By Page)
+---------------------
+
+Orders Page
+-----------
+- Add an order confirmation page/step before final submission.
+- If a user selects an item that was already selected before, require a review and confirmation of that action.

@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block content %}
+  <section class="page-header">
+    <div>
+      <h1>Gestao de Encomendas</h1>
+      <p>Pendentes agrupadas por fornecedor para envio rapido.</p>
+    </div>
+    <div>
+      <a class="pill toggle" href="{{ url_for('orders') }}" data-sound="back">Voltar a Encomendas</a>
+    </div>
+  </section>
+
+  {% if message_text and selected_group %}
+  <section class="panel">
+    <h2>Mensagem para {{ selected_group.supplier_name }}</h2>
+    <textarea id="supplier-message" rows="10" readonly>{{ message_text }}</textarea>
+    <div class="step-actions">
+      <button type="button" class="primary" data-copy-message data-sound="save">Copiar mensagem</button>
+    </div>
+  </section>
+  {% endif %}
+
+  <section class="panel">
+    <h2>Fornecedores com pendentes</h2>
+    <div class="table">
+      <div class="table-row table-head">
+        <div>Fornecedor</div>
+        <div>Itens pendentes</div>
+        <div>Acoes</div>
+      </div>
+      {% for group in groups %}
+      <div class="table-row">
+        <div>{{ group.supplier_name }}</div>
+        <div>{{ group.orders|length }}</div>
+        <div class="step-actions">
+          <form method="post">
+            <input type="hidden" name="action" value="build_message" />
+            <input type="hidden" name="supplier_id" value="{{ group.supplier_id }}" />
+            <button class="pill toggle" type="submit" data-sound="toggle">Gerar mensagem</button>
+          </form>
+          <form method="post" onsubmit="return confirm('Marcar todos os itens deste fornecedor como enviados?');">
+            <input type="hidden" name="action" value="mark_sent" />
+            <input type="hidden" name="supplier_id" value="{{ group.supplier_id }}" />
+            <button class="pill ok" type="submit" data-sound="save">Marcar como enviado</button>
+          </form>
+        </div>
+      </div>
+      <div class="table-row">
+        <div class="full" style="grid-column: 1 / -1;">
+          <strong>Itens:</strong>
+          {% for o in group.orders %}
+          <span class="pill">{{ o.item_name }} · {{ "%.2f"|format(o.qty) }} {{ o.unit }}</span>
+          {% endfor %}
+        </div>
+      </div>
+      {% else %}
+      <div class="table-row empty">Nao ha encomendas pendentes para gerir.</div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <script>
+    const copyBtn = document.querySelector("[data-copy-message]");
+    const textArea = document.getElementById("supplier-message");
+    copyBtn?.addEventListener("click", async () => {
+      if (!textArea) return;
+      try {
+        await navigator.clipboard.writeText(textArea.value);
+        if (typeof toast === "function") toast("Mensagem copiada.");
+      } catch (err) {
+        textArea.select();
+        document.execCommand("copy");
+        if (typeof toast === "function") toast("Mensagem copiada.");
+      }
+    });
+  </script>
+{% endblock %}

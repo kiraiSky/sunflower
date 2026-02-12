@@ -9,81 +9,81 @@ DB_PATH = "data.db"
 
 
 SUPPLIERS = [
-    ("Delta Café", "Ricardo", "+351 961 578 259", "", "Café, chá e afins."),
+    ("Delta Cafe", "Ricardo", "+351 961 578 259", "", "Cafe, cha e afins."),
     ("Superbock", "Sergio", "+351 961 130 605", "", ""),
     ("Garrafeira Rui Vinhos", "Andre", "+351 915 321 808", "", "Vinhos."),
-    ("Papel Pak", "Paulo", "+351", "", "Consumíveis e embalagens."),
-    ("Fernando Fernandes", "", "", "", "Descartáveis e limpeza."),
+    ("Papel Pak", "Paulo", "+351", "", "Consumiveis e embalagens."),
+    ("Fernando Fernandes", "", "", "", "Descartaveis e limpeza."),
     ("Pro Gel Cone", "", "+351 912 851 503", "", "Detergentes."),
-    ("Bio F.F", "", "", "", "Higiene e desinfeção."),
+    ("Bio F.F", "", "", "", "Higiene e desinfeccao."),
 ]
 
 
 ITEMS = [
-    ("Delta Café", "Café", "Cafetaria", "Bebidas quentes", "kg"),
-    ("Delta Café", "Chá", "Cafetaria", "Bebidas quentes", "cx"),
-    ("Delta Café", "Açúcar", "Cafetaria", "Acompanhamentos", "kg"),
-    ("Delta Café", "Adoçante", "Cafetaria", "Acompanhamentos", "cx"),
-    ("Delta Café", "Chávenas", "Cafetaria", "Acessórios", "cx"),
-    ("Delta Café", "Guarda-sóis", "Cafetaria", "Exterior", "un"),
-    ("Superbock", "Cerveja Superbock", "Bebidas", "Cerveja", "cx"),
-    ("Garrafeira Rui Vinhos", "Casal Garcia", "Bebidas", "Vinhos", "cx"),
-    ("Garrafeira Rui Vinhos", "Aveleda", "Bebidas", "Vinhos", "cx"),
-    ("Garrafeira Rui Vinhos", "Mateus", "Bebidas", "Vinhos", "cx"),
-    ("Garrafeira Rui Vinhos", "Esteva tinto", "Bebidas", "Vinhos", "cx"),
-    ("Garrafeira Rui Vinhos", "Cabriz tinto", "Bebidas", "Vinhos", "cx"),
-    ("Garrafeira Rui Vinhos", "Melange a Trois tinto", "Bebidas", "Vinhos", "cx"),
-    ("Garrafeira Rui Vinhos", "BSE branco", "Bebidas", "Vinhos", "cx"),
-    ("Garrafeira Rui Vinhos", "Monte Fuscaz (tinto e branco)", "Bebidas", "Vinhos", "cx"),
-    ("Garrafeira Rui Vinhos", "Villa Alvor (tinto e branco)", "Bebidas", "Vinhos", "cx"),
-    ("Papel Pak", "Sacos de vácuo", "Embalagens", "Cozinha", "cx"),
-    ("Papel Pak", "Luvas cozinha", "Cozinha", "Descartáveis", "cx"),
-    ("Papel Pak", "Rolos térmicos", "Operações", "Pagamentos", "cx"),
-    ("Fernando Fernandes", "Toalhas de mesa", "Sala", "Têxteis", "cx"),
-    ("Fernando Fernandes", "Papéis zigzag", "Casa de banho", "Higiene", "cx"),
-    ("Fernando Fernandes", "Rolo de cozinha", "Cozinha", "Higiene", "cx"),
-    ("Fernando Fernandes", "Caixa take away", "Embalagens", "Takeaway", "cx"),
-    ("Fernando Fernandes", "Toalitas de limão", "Bar", "Consumíveis", "cx"),
-    ("Fernando Fernandes", "Lava tudo chão", "Limpeza", "Químicos", "un"),
-    ("Fernando Fernandes", "Toca de cozinha", "Cozinha", "Têxteis", "cx"),
-    ("Fernando Fernandes", "Cheirinho do mictório", "Casa de banho", "Higiene", "un"),
-    ("Fernando Fernandes", "Palhinhas", "Bar", "Descartáveis", "cx"),
-    ("Fernando Fernandes", "Talher takeaway", "Embalagens", "Takeaway", "cx"),
-    ("Fernando Fernandes", "Copinhos takeaway", "Embalagens", "Takeaway", "cx"),
-    ("Pro Gel Cone", "Sabão para máquina", "Limpeza", "Químicos", "un"),
-    ("Pro Gel Cone", "Detergente", "Limpeza", "Químicos", "un"),
-    ("Bio F.F", "Desengordurante", "Limpeza", "Químicos", "un"),
-    ("Bio F.F", "Desinfetante", "Limpeza", "Químicos", "un"),
-    ("Bio F.F", "G19", "Limpeza", "Químicos", "un"),
-    ("Bio F.F", "Álcool gel", "Higiene", "Pessoal", "un"),
-    ("Bio F.F", "Blutoxol", "Limpeza", "Químicos", "un"),
-    ("Bio F.F", "Sabonete líquido", "Casa de banho", "Higiene", "un"),
+    ("Delta Cafe", "Cafe", "Mercearia", "Despensa", "kg"),
+    ("Delta Cafe", "Cha", "Mercearia", "Despensa", "cx"),
+    ("Delta Cafe", "Acucar", "Mercearia", "Despensa", "kg"),
+    ("Delta Cafe", "Adocante", "Mercearia", "Despensa", "cx"),
+    ("Delta Cafe", "Chavenas", "Descartaveis", "Armazem", "cx"),
+    ("Delta Cafe", "Guarda-sois", "Descartaveis", "Armazem", "un"),
+    ("Superbock", "Cerveja Superbock", "Bebidas", "Frigorifico de bebidas", "cx"),
+    ("Garrafeira Rui Vinhos", "Casal Garcia", "Vinhos", "Adega", "cx"),
+    ("Garrafeira Rui Vinhos", "Aveleda", "Vinhos", "Adega", "cx"),
+    ("Garrafeira Rui Vinhos", "Mateus", "Vinhos", "Adega", "cx"),
+    ("Garrafeira Rui Vinhos", "Esteva tinto", "Vinhos", "Adega", "cx"),
+    ("Garrafeira Rui Vinhos", "Cabriz tinto", "Vinhos", "Adega", "cx"),
+    ("Garrafeira Rui Vinhos", "Melange a Trois tinto", "Vinhos", "Adega", "cx"),
+    ("Garrafeira Rui Vinhos", "BSE branco", "Vinhos", "Adega", "cx"),
+    ("Garrafeira Rui Vinhos", "Monte Fuscaz (tinto e branco)", "Vinhos", "Adega", "cx"),
+    ("Garrafeira Rui Vinhos", "Villa Alvor (tinto e branco)", "Vinhos", "Adega", "cx"),
+    ("Papel Pak", "Sacos de vacuo", "Descartaveis", "Armazem", "cx"),
+    ("Papel Pak", "Luvas cozinha", "Descartaveis", "Armazem", "cx"),
+    ("Papel Pak", "Rolos termicos", "Mercearia", "Despensa", "cx"),
+    ("Fernando Fernandes", "Toalhas de mesa", "Descartaveis", "Armazem", "cx"),
+    ("Fernando Fernandes", "Papeis zigzag", "Descartaveis", "Armazem", "cx"),
+    ("Fernando Fernandes", "Rolo de cozinha", "Descartaveis", "Armazem", "cx"),
+    ("Fernando Fernandes", "Caixa take away", "Descartaveis", "Armazem", "cx"),
+    ("Fernando Fernandes", "Toalitas de limao", "Descartaveis", "Armazem", "cx"),
+    ("Fernando Fernandes", "Lava tudo chao", "Limpeza", "Armazem", "un"),
+    ("Fernando Fernandes", "Toca de cozinha", "Descartaveis", "Armazem", "cx"),
+    ("Fernando Fernandes", "Cheirinho do mictorio", "Limpeza", "Armazem", "un"),
+    ("Fernando Fernandes", "Palhinhas", "Descartaveis", "Armazem", "cx"),
+    ("Fernando Fernandes", "Talher takeaway", "Descartaveis", "Armazem", "cx"),
+    ("Fernando Fernandes", "Copinhos takeaway", "Descartaveis", "Armazem", "cx"),
+    ("Pro Gel Cone", "Sabao para maquina", "Limpeza", "Armazem", "un"),
+    ("Pro Gel Cone", "Detergente", "Limpeza", "Armazem", "un"),
+    ("Bio F.F", "Desengordurante", "Limpeza", "Armazem", "un"),
+    ("Bio F.F", "Desinfetante", "Limpeza", "Armazem", "un"),
+    ("Bio F.F", "G19", "Limpeza", "Armazem", "un"),
+    ("Bio F.F", "Alcool gel", "Limpeza", "Armazem", "un"),
+    ("Bio F.F", "Blutoxol", "Limpeza", "Armazem", "un"),
+    ("Bio F.F", "Sabonete liquido", "Limpeza", "Armazem", "un"),
 ]
 
 
 STOCK = [
     ("Rolo de cozinha", "un", 8, 4),
-    ("Papel higiénico", "cx", 2, 3),
-    ("Álcool gel", "un", 3, 2),
+    ("Papel higienico", "cx", 2, 3),
+    ("Alcool gel", "un", 3, 2),
     ("Detergente", "un", 4, 2),
-    ("Toalitas de limão", "cx", 1, 2),
+    ("Toalitas de limao", "cx", 1, 2),
 ]
 
 
 MARKET = [
     ("Sacos de lixo 20L", "2 cx", ""),
     ("Sacos de lixo 50L", "1 cx", ""),
-    ("Sabonete líquido rosa", "1 un", ""),
-    ("Papel higiénico", "3 cx", ""),
+    ("Sabonete liquido rosa", "1 un", ""),
+    ("Papel higienico", "3 cx", ""),
     ("Papel zigzag", "2 cx", ""),
     ("Rolos multibanco", "2 cx", ""),
 ]
 
 
 ORDERS = [
-    ("Delta Café", "Café", 8, "ordered", 120.0),
+    ("Delta Cafe", "Cafe", 8, "ordered", 120.0),
     ("Garrafeira Rui Vinhos", "Esteva tinto", 12, "pending", 210.0),
-    ("Papel Pak", "Rolos térmicos", 6, "ordered", 36.0),
+    ("Papel Pak", "Rolos termicos", 6, "ordered", 36.0),
     ("Fernando Fernandes", "Caixa take away", 10, "pending", 85.0),
 ]
 
@@ -191,7 +191,7 @@ def main():
     )
     args = parser.parse_args()
     seed_db(reset=args.reset)
-    print("Seed concluído.")
+    print("Seed concluido.")
 
 
 if __name__ == "__main__":

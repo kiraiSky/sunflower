@@ -3,107 +3,362 @@
   <section class="page-header">
     <div>
       <h1>Encomendas</h1>
-      <p>Associe itens a fornecedores e filtre rapidamente.</p>
+      <p>Uma lista pendente unica, sem duplicacao por equipas.</p>
+    </div>
+    <div>
+      <a class="pill toggle" href="{{ url_for('orders_manage') }}" data-sound="next">Gestao por fornecedor</a>
     </div>
   </section>
 
   <section class="panel">
-    <h2>Filtro por fornecedor</h2>
-    <form method="get" class="form grid-form">
-      <label>
-        Fornecedor
-        <select name="supplier_id" onchange="this.form.submit()">
-          <option value="">Todos</option>
-          {% for s in suppliers %}
-          <option value="{{ s[0] }}" {% if supplier_filter|int == s[0] %}selected{% endif %}>
-            {{ s[1] }}
-          </option>
-          {% endfor %}
-        </select>
-      </label>
-    </form>
-  </section>
-
-  <section class="panel">
-    <h2>Nova encomenda</h2>
-    <form method="post" class="form grid-form">
-      <label>
-        Fornecedor
-        <select name="supplier_id" required>
-          <option value="">Selecione</option>
-          {% for s in suppliers %}
-          <option value="{{ s[0] }}" {% if supplier_filter|int == s[0] %}selected{% endif %}>
-            {{ s[1] }}
-          </option>
-          {% endfor %}
-        </select>
-      </label>
-      <label>
+    <h2>Adicionar item em falta</h2>
+    <form method="post" class="form order-compose" id="order-compose">
+      <label class="full">
         Item
-        <select name="item_id" required>
-          <option value="">Selecione</option>
-          {% for i in items %}
-          <option value="{{ i[0] }}">{{ i[1] }} · {{ i[2] }} / {{ i[3] }}</option>
-          {% endfor %}
-        </select>
-        <span class="help-text">Use o filtro acima para ver itens por fornecedor.</span>
+        <input
+          type="search"
+          name="item_search"
+          id="item-search"
+          data-item-search
+          placeholder="Escreva o nome do item..."
+          autocomplete="off"
+          autofocus
+        />
       </label>
-      <label>
-        Quantidade
-        <input name="qty" type="number" step="0.01" required />
-      </label>
-      <label>
-        Estado
-        <select name="status">
-          <option value="pending">Pendente</option>
-          <option value="ordered">Encomendado</option>
-          <option value="delivered">Entregue</option>
-          <option value="cancelled">Cancelado</option>
-        </select>
-      </label>
-      <label>
-        Total
-        <input name="total" type="number" step="0.01" />
-      </label>
-      <label>
-        Data
-        <input name="ordered_at" type="date" />
-      </label>
-      <button class="primary" type="submit">Adicionar encomenda</button>
+      <input type="hidden" name="selected_items" id="selected-items-hidden" />
+      <input type="hidden" name="ordered_at" id="ordered-at-hidden" />
+      <button class="primary" type="submit" data-sound="save">Adicionar selecionados</button>
     </form>
+
+    <h3>Historico util (ainda nao pendentes)</h3>
+    <p class="help-text">Resultados atualizam a cada letra digitada.</p>
+    <div class="order-card-grid" id="order-item-results"></div>
   </section>
 
   <section class="panel">
-    <h2>Encomendas recentes</h2>
-    <div class="table">
+    <div class="pending-list-header">
+      <h2>Lista pendente</h2>
+      <button type="button" class="pill toggle" id="pending-view-toggle">Vista detalhada</button>
+    </div>
+
+    <div class="pending-card-grid" id="pending-simple-view">
+      {% for o in orders %}
+      <article class="pending-order-card" data-ordered-at="{{ o[4] }}">
+        <h4>{{ o[2] }}</h4>
+        <small data-pending-relative></small>
+      </article>
+      {% else %}
+      <div class="table-row empty">Nenhum item pendente.</div>
+      {% endfor %}
+    </div>
+
+    <div class="table responsive-table hidden" id="pending-detail-view">
       <div class="table-row table-head">
-        <div>Fornecedor</div>
         <div>Item</div>
-        <div>Tipo</div>
+        <div>Fornecedor</div>
         <div>Quantidade</div>
-        <div>Estado</div>
-        <div>Total</div>
-        <div>Data</div>
+        <div>Atualizado em</div>
       </div>
       {% for o in orders %}
       <div class="table-row">
-        <div>{{ o[1] or "—" }}</div>
-        <div>{{ o[2] or "—" }}</div>
-        <div>
-          {% if o[3] and o[4] %}
-            {{ o[3] }} / {{ o[4] }}
-          {% else %}
-            —
-          {% endif %}
-        </div>
-        <div>{{ "%.2f"|format(o[5]) }}</div>
-        <div><span class="pill">{{ o[6] }}</span></div>
-        <div>{{ "%.2f"|format(o[7]) }}</div>
-        <div>{{ o[8] }}</div>
+        <div data-label="Item">{{ o[2] }}</div>
+        <div data-label="Fornecedor">{{ o[1] }}</div>
+        <div data-label="Quantidade">{{ "%.2f"|format(o[3]) }}</div>
+        <div data-label="Atualizado em">{{ o[4] }}</div>
       </div>
       {% else %}
-      <div class="table-row empty">Ainda não existem encomendas.</div>
+      <div class="table-row empty">Nenhum item pendente.</div>
       {% endfor %}
     </div>
   </section>
+
+  <script>
+    const orderItems = {{ items|tojson }};
+    const searchInput = document.querySelector("[data-item-search]");
+    const selectedItemsHidden = document.getElementById("selected-items-hidden");
+    const results = document.getElementById("order-item-results");
+    const orderedAtHidden = document.getElementById("ordered-at-hidden");
+    const pendingViewToggle = document.getElementById("pending-view-toggle");
+    const pendingSimpleView = document.getElementById("pending-simple-view");
+    const pendingDetailView = document.getElementById("pending-detail-view");
+
+    const getDeviceDateISO = () => {
+      const d = new Date();
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
+      return `${y}-${m}-${day}`;
+    };
+
+    const relativeLastDate = (value) => {
+      if (!value) return "Nunca pedido";
+      const target = new Date(`${value}T00:00:00`);
+      if (Number.isNaN(target.getTime())) return `Ultima vez: ${value}`;
+
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const diffMs = today.getTime() - target.getTime();
+      const diffDays = Math.max(0, Math.floor(diffMs / 86400000));
+
+      if (diffDays === 0) return "Hoje";
+      if (diffDays === 1) return "Ontem";
+      if (diffDays < 7) return `${diffDays} dias atras`;
+      if (diffDays < 14) return "1 semana atras";
+      if (diffDays < 30) return `${Math.floor(diffDays / 7)} semanas atras`;
+      if (diffDays < 60) return "1 mes atras";
+      return `${Math.floor(diffDays / 30)} meses atras`;
+    };
+    const relativePendingDate = (value) => {
+      if (!value) return "sem data";
+      const target = new Date(`${value}T00:00:00`);
+      if (Number.isNaN(target.getTime())) return `adicionado em ${value}`;
+
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const diffMs = today.getTime() - target.getTime();
+      const diffDays = Math.max(0, Math.floor(diffMs / 86400000));
+
+      if (diffDays === 0) return "adicionado hoje";
+      if (diffDays === 1) return "ha 1 dia";
+      if (diffDays < 7) return `ha ${diffDays} dias`;
+      if (diffDays < 14) return "ha 1 semana";
+      if (diffDays < 30) return `ha ${Math.floor(diffDays / 7)} semanas`;
+      if (diffDays < 60) return "ha 1 mes";
+      return `ha ${Math.floor(diffDays / 30)} meses`;
+    };
+
+    const selectedItems = new Map();
+    const itemById = new Map(orderItems.map((item) => [Number(item[0]), item]));
+    const normalizeKey = (value) =>
+      (value || "")
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "");
+    const isSubsequence = (needle, haystack) => {
+      let j = 0;
+      for (let i = 0; i < haystack.length && j < needle.length; i += 1) {
+        if (haystack[i] === needle[j]) j += 1;
+      }
+      return j === needle.length;
+    };
+    const levenshtein = (a, b) => {
+      const m = a.length;
+      const n = b.length;
+      if (m === 0) return n;
+      if (n === 0) return m;
+      const dp = Array.from({ length: m + 1 }, () => Array(n + 1).fill(0));
+      for (let i = 0; i <= m; i += 1) dp[i][0] = i;
+      for (let j = 0; j <= n; j += 1) dp[0][j] = j;
+      for (let i = 1; i <= m; i += 1) {
+        for (let j = 1; j <= n; j += 1) {
+          const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+          dp[i][j] = Math.min(
+            dp[i - 1][j] + 1,
+            dp[i][j - 1] + 1,
+            dp[i - 1][j - 1] + cost
+          );
+        }
+      }
+      return dp[m][n];
+    };
+    const scoreTextMatch = (text, term) => {
+      if (!text || !term) return 0;
+      if (text === term) return 1200;
+      if (text.startsWith(term)) return 1000 - Math.min(300, text.length - term.length);
+      const words = text.split(/\s+/).filter(Boolean);
+      if (words.some((w) => w.startsWith(term))) return 900;
+      const idx = text.indexOf(term);
+      if (idx >= 0) return 700 - Math.min(300, idx * 8);
+      if (isSubsequence(term, text)) return 500;
+      let bestDistance = Infinity;
+      for (const w of words) {
+        bestDistance = Math.min(bestDistance, levenshtein(term, w.slice(0, term.length)));
+      }
+      if (Number.isFinite(bestDistance) && bestDistance <= 2) {
+        return 320 - bestDistance * 80;
+      }
+      return 0;
+    };
+    const daysSinceDate = (value) => {
+      if (!value) return null;
+      const target = new Date(`${value}T00:00:00`);
+      if (Number.isNaN(target.getTime())) return null;
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      return Math.max(0, Math.floor((today.getTime() - target.getTime()) / 86400000));
+    };
+
+    const renderCards = () => {
+      if (!results) return;
+      const term = normalizeKey((searchInput?.value || "").trim());
+      let filtered = [];
+      if (!term) {
+        const selectedFirst = orderItems.filter((item) => selectedItems.has(item[0]));
+        const suggestions = orderItems
+          .filter((item) => Boolean(item[5]) && !selectedItems.has(item[0]))
+          .slice(0, 24);
+        filtered = [...selectedFirst, ...suggestions];
+      } else {
+        filtered = orderItems
+          .map((item, idx) => {
+          const itemName = normalizeKey(item[1]);
+          const supplierName = normalizeKey(item[2]);
+            const nameScore = scoreTextMatch(itemName, term);
+            const supplierScore = scoreTextMatch(supplierName, term);
+            const score = Math.max(nameScore, supplierScore * 0.7);
+            return { item, score, idx };
+          })
+          .filter((entry) => entry.score > 0)
+          .sort((a, b) => {
+            if (b.score !== a.score) return b.score - a.score;
+            return a.idx - b.idx;
+          })
+          .map((entry) => entry.item);
+      }
+
+      if (!filtered.length) {
+        results.innerHTML = '<div class="table-row empty">Sem resultados para esse texto.</div>';
+        return;
+      }
+
+      results.innerHTML = "";
+      filtered.forEach((item) => {
+        const id = item[0];
+        const name = item[1];
+        const supplier = item[2];
+        const last = item[5];
+        const selected = selectedItems.has(id);
+        const selectedQty = selected ? selectedItems.get(id).qty : 1;
+
+        const card = document.createElement("div");
+        card.className = "order-item-card";
+        card.setAttribute("role", "button");
+        card.setAttribute("tabindex", "0");
+        if (selected) card.classList.add("selected");
+        const title = document.createElement("h4");
+        title.textContent = name;
+        const supplierText = document.createElement("p");
+        supplierText.textContent = supplier;
+        const lastText = document.createElement("small");
+        lastText.textContent = relativeLastDate(last);
+        const footer = document.createElement("div");
+        footer.className = "order-item-footer";
+        const qtyLabel = document.createElement("label");
+        qtyLabel.textContent = "Qtd";
+        const qtyInput = document.createElement("input");
+        qtyInput.type = "number";
+        qtyInput.min = "0.01";
+        qtyInput.step = "0.01";
+        qtyInput.value = String(selectedQty);
+        qtyInput.className = "order-qty-input";
+        const pick = document.createElement("span");
+        pick.className = "pill toggle";
+        pick.textContent = selected ? "Selecionado" : "Selecionar";
+        footer.appendChild(qtyLabel);
+        footer.appendChild(qtyInput);
+        footer.appendChild(pick);
+        card.appendChild(title);
+        card.appendChild(supplierText);
+        card.appendChild(lastText);
+        card.appendChild(footer);
+
+        const toggleSelection = () => {
+          const qty = Math.max(0.01, Number(qtyInput.value || "1"));
+          if (selectedItems.has(id)) {
+            selectedItems.delete(id);
+          } else {
+            selectedItems.set(id, { item_id: id, qty });
+          }
+          renderCards();
+        };
+
+        qtyInput.addEventListener("click", (e) => e.stopPropagation());
+        qtyInput.addEventListener("input", (e) => {
+          e.stopPropagation();
+          if (!selectedItems.has(id)) return;
+          selectedItems.set(id, { item_id: id, qty: Math.max(0.01, Number(qtyInput.value || "1")) });
+        });
+
+        card.addEventListener("click", toggleSelection);
+        card.addEventListener("keydown", (e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            toggleSelection();
+          }
+        });
+
+        results.appendChild(card);
+      });
+    };
+
+    searchInput?.addEventListener("input", renderCards);
+    searchInput?.addEventListener("focus", renderCards);
+
+    document.getElementById("order-compose")?.addEventListener("submit", (e) => {
+      if (orderedAtHidden) orderedAtHidden.value = getDeviceDateISO();
+      if (selectedItems.size === 0) {
+        e.preventDefault();
+        alert("Selecione pelo menos um item.");
+        return;
+      }
+
+      const selectedEntries = [...selectedItems.values()];
+      const riskyEntries = selectedEntries.filter((entry) => {
+        const item = itemById.get(Number(entry.item_id));
+        if (!item) return false;
+        const supplierName = normalizeKey(item[2]);
+        if (supplierName !== "mercado") return false;
+        const lastPurchasedAt = item[6];
+        const days = daysSinceDate(lastPurchasedAt);
+        return days !== null && days < 3;
+      });
+
+      for (const entry of riskyEntries) {
+        const item = itemById.get(Number(entry.item_id));
+        if (!item) continue;
+        const days = daysSinceDate(item[6]);
+        const message =
+          days === 0
+            ? `${item[1]} foi comprado hoje. Deseja mesmo encomendar novamente?`
+            : `${item[1]} foi comprado ha ${days} dia(s). Deseja mesmo encomendar novamente?`;
+        const confirmed = window.confirm(message);
+        if (!confirmed) {
+          selectedItems.delete(Number(entry.item_id));
+        }
+      }
+
+      if (selectedItems.size === 0) {
+        e.preventDefault();
+        renderCards();
+        alert("Nenhum item confirmado para envio.");
+        return;
+      }
+
+      if (selectedItemsHidden) {
+        selectedItemsHidden.value = JSON.stringify([...selectedItems.values()]);
+      }
+    });
+
+    document.querySelectorAll("[data-pending-relative]").forEach((el) => {
+      const orderedAt = el.closest("[data-ordered-at]")?.dataset.orderedAt || "";
+      el.textContent = relativePendingDate(orderedAt);
+    });
+
+    if (pendingViewToggle && pendingSimpleView && pendingDetailView) {
+      let isDetailedView = false;
+      const applyPendingView = () => {
+        pendingSimpleView.classList.toggle("hidden", isDetailedView);
+        pendingDetailView.classList.toggle("hidden", !isDetailedView);
+        pendingViewToggle.textContent = isDetailedView ? "Vista simples" : "Vista detalhada";
+      };
+      pendingViewToggle.addEventListener("click", () => {
+        isDetailedView = !isDetailedView;
+        applyPendingView();
+      });
+      applyPendingView();
+    }
+
+    if (orderedAtHidden) orderedAtHidden.value = getDeviceDateISO();
+    renderCards();
+  </script>
 {% endblock %}

@@ -30,6 +30,14 @@
     </header>
 
     {% if user %}
+    <nav class="desktop-nav" aria-label="Main menu">
+      <a href="{{ url_for('index') }}">Painel</a>
+      <a href="{{ url_for('suppliers') }}">Fornecedores</a>
+      <a href="{{ url_for('items') }}">Itens</a>
+      <a href="{{ url_for('orders') }}">Encomendas</a>
+      <a href="{{ url_for('stock') }}">Stock</a>
+      <a href="{{ url_for('market') }}">Lista</a>
+    </nav>
     <div class="bottom-bar">
       <button class="bottom-action" id="menu-toggle" aria-expanded="false" aria-controls="mobile-menu">
         ☰
