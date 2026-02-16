@@ -240,7 +240,7 @@ def seed_db(reset=False, db_path=DB_PATH):
 
     items_existing = conn.execute("SELECT COUNT(*) AS c FROM items").fetchone()["c"]
     if items_existing == 0:
-        for supplier_name, name, item_type, item_subtype, unit in ITEMS:
+        for supplier_name, name, item_type, item_subtype, unit in REQUESTED_CATALOG:
             conn.execute(
                 """
                 INSERT INTO items (supplier_id, name, item_type, item_subtype, unit, active)
