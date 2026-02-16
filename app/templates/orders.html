@@ -13,25 +13,27 @@
   <section class="panel">
     <h2>Adicionar item em falta</h2>
     <form method="post" class="form order-compose" id="order-compose">
-      <label class="full">
-        Item
-        <input
-          type="search"
-          name="item_search"
-          id="item-search"
-          data-item-search
-          placeholder="Escreva o nome do item..."
-          autocomplete="off"
-          autofocus
-        />
-      </label>
       <input type="hidden" name="selected_items" id="selected-items-hidden" />
       <input type="hidden" name="ordered_at" id="ordered-at-hidden" />
       <button class="primary" type="submit" data-sound="save">Adicionar selecionados</button>
     </form>
 
-    <h3>Historico util (ainda nao pendentes)</h3>
-    <p class="help-text">Resultados atualizam a cada letra digitada.</p>
+    <h3>Filtro por categoria e zona</h3>
+    <div class="form">
+      <label>
+        Categoria
+        <select id="order-filter-type">
+          <option value="">Todas</option>
+        </select>
+      </label>
+      <label>
+        Zona
+        <select id="order-filter-subtype">
+          <option value="">Todas</option>
+        </select>
+      </label>
+    </div>
+    <p class="help-text">Escolha categoria e/ou zona para listar os itens correspondentes.</p>
     <div class="order-card-grid" id="order-item-results"></div>
   </section>
 
@@ -74,10 +76,11 @@
 
   <script>
     const orderItems = {{ items|tojson }};
-    const searchInput = document.querySelector("[data-item-search]");
     const selectedItemsHidden = document.getElementById("selected-items-hidden");
     const results = document.getElementById("order-item-results");
     const orderedAtHidden = document.getElementById("ordered-at-hidden");
+    const filterType = document.getElementById("order-filter-type");
+    const filterSubtype = document.getElementById("order-filter-subtype");
     const pendingViewToggle = document.getElementById("pending-view-toggle");
     const pendingSimpleView = document.getElementById("pending-simple-view");
     const pendingDetailView = document.getElementById("pending-detail-view");
@@ -134,51 +137,6 @@
         .toLowerCase()
         .normalize("NFD")
         .replace(/[\u0300-\u036f]/g, "");
-    const isSubsequence = (needle, haystack) => {
-      let j = 0;
-      for (let i = 0; i < haystack.length && j < needle.length; i += 1) {
-        if (haystack[i] === needle[j]) j += 1;
-      }
-      return j === needle.length;
-    };
-    const levenshtein = (a, b) => {
-      const m = a.length;
-      const n = b.length;
-      if (m === 0) return n;
-      if (n === 0) return m;
-      const dp = Array.from({ length: m + 1 }, () => Array(n + 1).fill(0));
-      for (let i = 0; i <= m; i += 1) dp[i][0] = i;
-      for (let j = 0; j <= n; j += 1) dp[0][j] = j;
-      for (let i = 1; i <= m; i += 1) {
-        for (let j = 1; j <= n; j += 1) {
-          const cost = a[i - 1] === b[j - 1] ? 0 : 1;
-          dp[i][j] = Math.min(
-            dp[i - 1][j] + 1,
-            dp[i][j - 1] + 1,
-            dp[i - 1][j - 1] + cost
-          );
-        }
-      }
-      return dp[m][n];
-    };
-    const scoreTextMatch = (text, term) => {
-      if (!text || !term) return 0;
-      if (text === term) return 1200;
-      if (text.startsWith(term)) return 1000 - Math.min(300, text.length - term.length);
-      const words = text.split(/\s+/).filter(Boolean);
-      if (words.some((w) => w.startsWith(term))) return 900;
-      const idx = text.indexOf(term);
-      if (idx >= 0) return 700 - Math.min(300, idx * 8);
-      if (isSubsequence(term, text)) return 500;
-      let bestDistance = Infinity;
-      for (const w of words) {
-        bestDistance = Math.min(bestDistance, levenshtein(term, w.slice(0, term.length)));
-      }
-      if (Number.isFinite(bestDistance) && bestDistance <= 2) {
-        return 320 - bestDistance * 80;
-      }
-      return 0;
-    };
     const daysSinceDate = (value) => {
       if (!value) return null;
       const target = new Date(`${value}T00:00:00`);
@@ -190,34 +148,18 @@
 
     const renderCards = () => {
       if (!results) return;
-      const term = normalizeKey((searchInput?.value || "").trim());
-      let filtered = [];
-      if (!term) {
-        const selectedFirst = orderItems.filter((item) => selectedItems.has(item[0]));
-        const suggestions = orderItems
-          .filter((item) => Boolean(item[5]) && !selectedItems.has(item[0]))
-          .slice(0, 24);
-        filtered = [...selectedFirst, ...suggestions];
-      } else {
-        filtered = orderItems
-          .map((item, idx) => {
-          const itemName = normalizeKey(item[1]);
-          const supplierName = normalizeKey(item[2]);
-            const nameScore = scoreTextMatch(itemName, term);
-            const supplierScore = scoreTextMatch(supplierName, term);
-            const score = Math.max(nameScore, supplierScore * 0.7);
-            return { item, score, idx };
-          })
-          .filter((entry) => entry.score > 0)
-          .sort((a, b) => {
-            if (b.score !== a.score) return b.score - a.score;
-            return a.idx - b.idx;
-          })
-          .map((entry) => entry.item);
-      }
+      const selectedType = normalizeKey(filterType?.value || "");
+      const selectedSubtype = normalizeKey(filterSubtype?.value || "");
+      const filtered = orderItems.filter((item) => {
+        const itemType = normalizeKey(item[3]);
+        const itemSubtype = normalizeKey(item[4]);
+        const typeMatch = !selectedType || itemType === selectedType;
+        const subtypeMatch = !selectedSubtype || itemSubtype === selectedSubtype;
+        return typeMatch && subtypeMatch;
+      });
 
       if (!filtered.length) {
-        results.innerHTML = '<div class="table-row empty">Sem resultados para esse texto.</div>';
+        results.innerHTML = '<div class="table-row empty">Sem itens para esse filtro.</div>';
         return;
       }
 
@@ -291,8 +233,30 @@
       });
     };
 
-    searchInput?.addEventListener("input", renderCards);
-    searchInput?.addEventListener("focus", renderCards);
+    const buildFilterOptions = () => {
+      const uniqueTypes = [...new Set(orderItems.map((item) => item[3]).filter(Boolean))].sort();
+      const uniqueSubtypes = [...new Set(orderItems.map((item) => item[4]).filter(Boolean))].sort();
+
+      if (filterType) {
+        uniqueTypes.forEach((value) => {
+          const option = document.createElement("option");
+          option.value = value;
+          option.textContent = value;
+          filterType.appendChild(option);
+        });
+      }
+      if (filterSubtype) {
+        uniqueSubtypes.forEach((value) => {
+          const option = document.createElement("option");
+          option.value = value;
+          option.textContent = value;
+          filterSubtype.appendChild(option);
+        });
+      }
+    };
+
+    filterType?.addEventListener("change", renderCards);
+    filterSubtype?.addEventListener("change", renderCards);
 
     document.getElementById("order-compose")?.addEventListener("submit", (e) => {
       if (orderedAtHidden) orderedAtHidden.value = getDeviceDateISO();
@@ -359,6 +323,7 @@
     }
 
     if (orderedAtHidden) orderedAtHidden.value = getDeviceDateISO();
+    buildFilterOptions();
     renderCards();
   </script>
 {% endblock %}
