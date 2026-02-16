@@ -224,13 +224,13 @@ def ensure_todo_catalog(conn):
         ORDER BY LOWER(TRIM(COALESCE(item_subtype, ''))), LOWER(TRIM(name))
         """
     ).fetchall():
-        district_name = district or "Bar"
-        sort_order = existing_bar_sorts.get(district_name, 0) + 1
-        existing_bar_sorts[district_name] = sort_order
+        effective_district = district or "Bar"
+        sort_order = existing_bar_sorts.get(effective_district, 0) + 1
+        existing_bar_sorts[effective_district] = sort_order
         conn.execute(
             """
             INSERT OR IGNORE INTO todo_catalog (area, district, item_name, sort_order, active)
             VALUES ('bar', ?, ?, ?, 1)
             """,
-            (district_name, item_name, sort_order),
+            (effective_district, item_name, sort_order),
         )
