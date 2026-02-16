@@ -199,7 +199,7 @@ def seed_db(reset=False, db_path=DB_PATH):
     if repo_root not in sys.path:
         sys.path.insert(0, repo_root)
 
-    from app.models import SCHEMA, ensure_admin, migrate_db
+    from app.models import SCHEMA, ensure_admin, ensure_todo_catalog, migrate_db
 
     conn = sqlite3.connect(db_path)
     conn.row_factory = sqlite3.Row
@@ -331,6 +331,8 @@ def seed_db(reset=False, db_path=DB_PATH):
                     """,
                     (item_name, qty_text, checked, item_id, order_id, qty, unit, ordered_at, purchased_at),
                 )
+
+    ensure_todo_catalog(conn)
 
     conn.commit()
     conn.close()

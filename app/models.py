@@ -201,3 +201,36 @@ def ensure_todo_catalog(conn):
             """,
             (area, district, item_name, sort_order),
         )
+
+    # Keep Bar checklist aligned with all active bar-related catalog items.
+    existing_bar_sorts = {
+        row[0]: row[1]
+        for row in conn.execute(
+            """
+            SELECT district, COALESCE(MAX(sort_order), 0)
+            FROM todo_catalog
+            WHERE area = 'bar'
+            GROUP BY district
+            """
+        ).fetchall()
+    }
+    for district, item_name in conn.execute(
+        """
+        SELECT DISTINCT TRIM(COALESCE(item_subtype, '')), TRIM(name)
+        FROM items
+        WHERE active = 1
+          AND LOWER(TRIM(item_type)) = 'bar'
+          AND TRIM(name) <> ''
+        ORDER BY LOWER(TRIM(COALESCE(item_subtype, ''))), LOWER(TRIM(name))
+        """
+    ).fetchall():
+        district_name = district or "Bar"
+        sort_order = existing_bar_sorts.get(district_name, 0) + 1
+        existing_bar_sorts[district_name] = sort_order
+        conn.execute(
+            """
+            INSERT OR IGNORE INTO todo_catalog (area, district, item_name, sort_order, active)
+            VALUES ('bar', ?, ?, ?, 1)
+            """,
+            (district_name, item_name, sort_order),
+        )
