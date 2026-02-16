@@ -22,7 +22,7 @@
     <div class="form grid-form">
       <label class="full" for="order-filter-search">
         Pesquisa
-        <input type="search" id="order-filter-search" placeholder="Item, fornecedor, categoria ou zona" />
+        <input type="search" id="order-filter-search" placeholder="Item, fornecedor, categoria ou zona" aria-label="Pesquisar por item, fornecedor, categoria ou zona" />
       </label>
       <label>
         Categoria
@@ -256,7 +256,7 @@
 
     const buildFilterPills = (host, values, selected, onPick) => {
       if (!host) return;
-      host.innerHTML = "";
+      host.textContent = "";
       [{ label: "Todas", value: "" }, ...values.map((value) => ({ label: value, value }))].forEach((entry) => {
         const btn = document.createElement("button");
         btn.type = "button";
