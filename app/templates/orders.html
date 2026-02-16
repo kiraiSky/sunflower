@@ -18,16 +18,18 @@
       <button class="primary" type="submit" data-sound="save">Adicionar selecionados</button>
     </form>
 
-    <h3>Filtragem rápida</h3>
-    <div class="form grid-form">
-      <label class="full" for="order-filter-search">
-        Pesquisa
-        <input type="search" id="order-filter-search" placeholder="Item, fornecedor, categoria ou zona" aria-label="Pesquisar por item, fornecedor, categoria ou zona" />
-      </label>
-      <div class="full quick-picks" id="order-filter-type-pills"></div>
-      <div class="full quick-picks" id="order-filter-subtype-pills"></div>
-    </div>
-    <p class="help-text">Pesquise e use os atalhos por categoria/zona para listar os itens correspondentes.</p>
+    <details>
+      <summary>Filtragem rápida</summary>
+      <div class="form grid-form">
+        <label class="full" for="order-filter-search">
+          Pesquisa
+          <input type="search" id="order-filter-search" placeholder="Item, fornecedor, categoria ou zona" aria-label="Pesquisar por item, fornecedor, categoria ou zona" />
+        </label>
+        <div class="full quick-picks" id="order-filter-type-pills"></div>
+        <div class="full quick-picks" id="order-filter-subtype-pills"></div>
+      </div>
+      <p class="help-text">Pesquise e use os atalhos por categoria/zona para listar os itens correspondentes.</p>
+    </details>
     <div class="order-card-grid" id="order-item-results"></div>
   </section>
 
