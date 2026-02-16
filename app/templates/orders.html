@@ -24,18 +24,6 @@
         Pesquisa
         <input type="search" id="order-filter-search" placeholder="Item, fornecedor, categoria ou zona" aria-label="Pesquisar por item, fornecedor, categoria ou zona" />
       </label>
-      <label>
-        Categoria
-        <select id="order-filter-type">
-          <option value="">Todas</option>
-        </select>
-      </label>
-      <label>
-        Zona
-        <select id="order-filter-subtype">
-          <option value="">Todas</option>
-        </select>
-      </label>
       <div class="full quick-picks" id="order-filter-type-pills"></div>
       <div class="full quick-picks" id="order-filter-subtype-pills"></div>
     </div>
@@ -86,8 +74,6 @@
     const results = document.getElementById("order-item-results");
     const orderedAtHidden = document.getElementById("ordered-at-hidden");
     const filterSearch = document.getElementById("order-filter-search");
-    const filterType = document.getElementById("order-filter-type");
-    const filterSubtype = document.getElementById("order-filter-subtype");
     const filterTypePills = document.getElementById("order-filter-type-pills");
     const filterSubtypePills = document.getElementById("order-filter-subtype-pills");
     const pendingViewToggle = document.getElementById("pending-view-toggle");
@@ -157,19 +143,21 @@
     const uniqueTypes = [...new Set(orderItems.map((item) => item[3]).filter(Boolean))].sort();
     const uniqueSubtypes = [...new Set(orderItems.map((item) => item[4]).filter(Boolean))].sort();
     const SEARCH_DEBOUNCE_MS = 250;
+    let selectedType = "";
+    let selectedSubtype = "";
 
     const renderCards = () => {
       if (!results) return;
-      const selectedType = normalizeKey(filterType?.value || "");
-      const selectedSubtype = normalizeKey(filterSubtype?.value || "");
+      const selectedTypeKey = normalizeKey(selectedType);
+      const selectedSubtypeKey = normalizeKey(selectedSubtype);
       const selectedSearch = normalizeKey(filterSearch?.value || "");
       const filtered = orderItems.filter((item) => {
         const itemType = normalizeKey(item[3]);
         const itemSubtype = normalizeKey(item[4]);
         const itemName = normalizeKey(item[1]);
         const itemSupplier = normalizeKey(item[2]);
-        const typeMatch = !selectedType || itemType === selectedType;
-        const subtypeMatch = !selectedSubtype || itemSubtype === selectedSubtype;
+        const typeMatch = !selectedTypeKey || itemType === selectedTypeKey;
+        const subtypeMatch = !selectedSubtypeKey || itemSubtype === selectedSubtypeKey;
         const searchMatch =
           !selectedSearch ||
           itemName.includes(selectedSearch) ||
@@ -267,50 +255,18 @@
       });
     };
 
-    const buildFilterOptions = () => {
-      if (filterType) {
-        filterType.innerHTML = '<option value="">Todas</option>';
-        uniqueTypes.forEach((value) => {
-          const option = document.createElement("option");
-          option.value = value;
-          option.textContent = value;
-          filterType.appendChild(option);
-        });
-      }
-      if (filterSubtype) {
-        filterSubtype.innerHTML = '<option value="">Todas</option>';
-        uniqueSubtypes.forEach((value) => {
-          const option = document.createElement("option");
-          option.value = value;
-          option.textContent = value;
-          filterSubtype.appendChild(option);
-        });
-      }
-    };
-
     const renderFilterPills = () => {
-      buildFilterPills(filterTypePills, uniqueTypes, filterType?.value || "", (value) => {
-        if (!filterType) return;
-        filterType.value = value;
+      buildFilterPills(filterTypePills, uniqueTypes, selectedType, (value) => {
+        selectedType = value;
         renderCards();
         renderFilterPills();
       });
-      buildFilterPills(filterSubtypePills, uniqueSubtypes, filterSubtype?.value || "", (value) => {
-        if (!filterSubtype) return;
-        filterSubtype.value = value;
+      buildFilterPills(filterSubtypePills, uniqueSubtypes, selectedSubtype, (value) => {
+        selectedSubtype = value;
         renderCards();
         renderFilterPills();
       });
     };
-
-    filterType?.addEventListener("change", () => {
-      renderCards();
-      renderFilterPills();
-    });
-    filterSubtype?.addEventListener("change", () => {
-      renderCards();
-      renderFilterPills();
-    });
     let filterSearchTimer = null;
     filterSearch?.addEventListener("input", () => {
       window.clearTimeout(filterSearchTimer);
@@ -382,7 +338,6 @@
     }
 
     if (orderedAtHidden) orderedAtHidden.value = getDeviceDateISO();
-    buildFilterOptions();
     renderFilterPills();
     renderCards();
   </script>
