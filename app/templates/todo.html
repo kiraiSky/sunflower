@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+{% block content %}
+  <section class="page-header">
+    <div>
+      <h1>To-Do Diario</h1>
+      <p>Checklist por area para marcar faltas do dia.</p>
+    </div>
+    <div class="todo-area-tabs">
+      {% for area_key, area_label in area_labels.items() %}
+      <a
+        class="pill toggle {% if selected_area == area_key %}todo-area-active{% endif %}"
+        href="{{ url_for('todo', area=area_key) }}"
+        data-sound="toggle"
+      >
+        {{ area_label }}
+      </a>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>{{ area_labels[selected_area] }} · {{ selected_date }}</h2>
+
+    {% if check_exists_today and not edit_mode %}
+    <div class="todo-report-head">
+      <div class="todo-report-meta">
+        <span class="pill ok">Checklist do dia concluida</span>
+      </div>
+      {% if is_today %}
+      <a
+        class="todo-edit-btn"
+        href="{{ url_for('todo', area=selected_area, date=selected_date, edit=1) }}"
+        data-sound="toggle"
+        title="Editar checklist de hoje"
+      >
+        <i class="fa-solid fa-pen"></i>
+      </a>
+      {% endif %}
+    </div>
+    <div class="todo-report-grid">
+      {% for district_name, entries in report_by_district %}
+      <article class="todo-report-card">
+        <h3>{{ district_name }}</h3>
+        <div class="todo-report-list">
+          {% set missing_entries = entries|selectattr('is_missing')|list %}
+          {% if missing_entries %}
+            {% for entry in missing_entries %}
+            <div class="todo-report-item missing">
+              <i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i>
+              <span>{{ entry.item_name }}</span>
+            </div>
+            {% endfor %}
+          {% else %}
+          <div class="todo-report-item ok">
+            <i class="fa-solid fa-circle-check" aria-hidden="true"></i>
+            <span>Sem faltas neste distrito.</span>
+          </div>
+          {% endif %}
+        </div>
+      </article>
+      {% endfor %}
+    </div>
+    {% elif districts and is_today %}
+    <form method="post" class="stepper todo-stepper" data-todo-stepper>
+      <input type="hidden" name="area" value="{{ selected_area }}" />
+      <input type="hidden" name="missing_items" id="missing-items-input" />
+
+      {% for district_name, district_items in districts %}
+      <div class="step {% if loop.first %}active{% endif %}" data-step="{{ loop.index }}">
+        <div class="step-card">
+          <div class="step-label">{{ loop.index }}</div>
+          <div>
+            <h3>{{ district_name }}</h3>
+            <p>Marque abaixo o que esta em falta nesta zona.</p>
+          </div>
+        </div>
+
+        <div class="todo-item-grid">
+          {% for item_name in district_items %}
+          <label class="todo-item-option">
+            <input
+              type="checkbox"
+              data-missing-item
+              data-district="{{ district_name }}"
+              value="{{ item_name }}"
+              {% if (district_name, item_name) in missing_pairs %}checked{% endif %}
+            />
+            <span>{{ item_name }}</span>
+          </label>
+          {% endfor %}
+        </div>
+
+        <div class="step-actions">
+          {% if not loop.first %}
+          <button type="button" class="pill toggle todo-back-btn" data-sound="back">Voltar</button>
+          {% endif %}
+          {% if loop.last %}
+          <button class="primary" type="submit" data-sound="save">Guardar checklist</button>
+          {% else %}
+          <button type="button" class="primary todo-next-btn" data-sound="next">Continuar</button>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </form>
+    {% elif not is_today %}
+    <div class="table-row empty">Sem checklist registada para esta data.</div>
+    {% else %}
+    <div class="table-row empty">Sem itens configurados para esta area.</div>
+    {% endif %}
+  </section>
+
+  <section class="panel">
+    <h3>Listas passadas</h3>
+    <div class="todo-history-list">
+      {% for row in history_dates %}
+      <a
+        class="pill toggle {% if row.selected %}todo-area-active{% endif %}"
+        href="{{ url_for('todo', area=selected_area, date=row.iso) }}"
+      >
+        {{ row.display }}
+      </a>
+      {% else %}
+      <div class="table-row empty">Sem historico ainda.</div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <script>
+    (() => {
+      const form = document.querySelector("[data-todo-stepper]");
+      if (!form) return;
+
+      const steps = Array.from(form.querySelectorAll(".step"));
+      const hiddenInput = document.getElementById("missing-items-input");
+
+      const setStep = (index) => {
+        steps.forEach((step, idx) => step.classList.toggle("active", idx === index));
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      };
+
+      steps.forEach((step, idx) => {
+        const next = step.querySelector(".todo-next-btn");
+        const back = step.querySelector(".todo-back-btn");
+        if (next) next.addEventListener("click", () => setStep(Math.min(idx + 1, steps.length - 1)));
+        if (back) back.addEventListener("click", () => setStep(Math.max(idx - 1, 0)));
+      });
+
+      form.querySelectorAll("[data-missing-item]").forEach((input) => {
+        const wrap = input.closest(".todo-item-option");
+        if (!wrap) return;
+        const syncState = () => wrap.classList.toggle("selected", input.checked);
+        input.addEventListener("change", syncState);
+        syncState();
+      });
+
+      form.addEventListener("submit", () => {
+        const payload = [];
+        form.querySelectorAll("[data-missing-item]").forEach((input) => {
+          if (!input.checked) return;
+          payload.push({
+            district: input.dataset.district || "",
+            item_name: input.value || "",
+          });
+        });
+        hiddenInput.value = JSON.stringify(payload);
+      });
+    })();
+  </script>
+{% endblock %}

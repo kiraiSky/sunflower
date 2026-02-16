@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block content %}
+  <section class="page-header">
+    <div>
+      <h1>Encomendar Faltas</h1>
+      <p>{{ area_labels[selected_area] }} · {{ today_iso }}</p>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>Deseja encomendar os itens em falta?</h2>
+    <p>Revise abaixo o que sera pedido. Pode desmarcar itens antes de confirmar.</p>
+
+    <form method="post" class="form">
+      <div class="todo-order-report">
+        {% for row in report_rows %}
+        <label class="todo-order-row {% if not row.has_candidate %}todo-order-row-disabled{% endif %}">
+          {% if row.has_candidate %}
+          <input
+            type="checkbox"
+            name="selected_item_ids"
+            value="{{ row.candidate.item_id }}"
+            {% if row.candidate.item_id|string in default_selected_ids %}checked{% endif %}
+          />
+          {% else %}
+          <input type="checkbox" disabled />
+          {% endif %}
+          <div>
+            <strong>{{ row.item_name }}</strong>
+            <div class="help-text">Distritos: {{ row.districts|join(", ") }}</div>
+            {% if row.has_candidate %}
+            <div class="help-text">Fornecedor: {{ row.candidate.supplier_name }}</div>
+            {% if row.candidate.item_id|string in ordered_item_ids %}
+            <div class="help-text">Ja encomendado neste checklist.</div>
+            {% endif %}
+            {% else %}
+            <div class="help-text">Sem correspondencia no catalogo de itens ativos.</div>
+            {% endif %}
+          </div>
+        </label>
+        {% endfor %}
+      </div>
+
+      <div class="step-actions">
+        <button class="primary" type="submit" name="action" value="order" data-toast="Encomenda criada">
+          Confirmar encomenda
+        </button>
+        <button class="pill toggle" type="submit" name="action" value="skip">
+          Nao encomendar
+        </button>
+      </div>
+    </form>
+  </section>
+{% endblock %}

@@ -4,3 +4,5 @@ __pycache__/
 data.db
 .env
 *.log
+# Session memory (local only)
+CODEx_SESSION_MEMORY.md

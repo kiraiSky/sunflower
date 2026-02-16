@@ -1,77 +1,278 @@
 {% extends "base.html" %}
 {% block content %}
-  <section class="hero">
-    <div>
-      <p class="eyebrow">Bem-vindo de volta</p>
-      <h1>Organize compras, stock e mercado num só lugar.</h1>
-      <p class="subhead">
-        O painel mostra um resumo rápido de fornecedores, encomendas, stock em falta e
-        a lista de mercado.
-      </p>
-    </div>
-    <div class="hero-card">
-      <div class="stat">
-        <div class="stat-label">Fornecedores</div>
-        <div class="stat-value">{{ suppliers }}</div>
+  <div class="home-layout layout-3">
+    <section class="home-block span-2 hero">
+      <div>
+        <p class="eyebrow">Bem-vindo de volta</p>
+        <h1>Organize compras, stock e mercado num só lugar.</h1>
+        <p class="subhead">
+          O painel mostra um resumo rápido de fornecedores, encomendas, stock em falta e
+          a lista de mercado.
+        </p>
       </div>
-      <div class="stat">
-        <div class="stat-label">Encomendas</div>
-        <div class="stat-value">{{ orders }}</div>
+      <div class="hero-card">
+        <div class="stat">
+          <div class="stat-label">Fornecedores</div>
+          <div class="stat-value">{{ suppliers }}</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Encomendas</div>
+          <div class="stat-value">{{ orders }}</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Stock baixo</div>
+          <div class="stat-value">{{ low_stock }}</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Itens na lista</div>
+          <div class="stat-value">{{ market }}</div>
+        </div>
       </div>
-      <div class="stat">
-        <div class="stat-label">Stock baixo</div>
-        <div class="stat-value">{{ low_stock }}</div>
-      </div>
-      <div class="stat">
-        <div class="stat-label">Itens na lista</div>
-        <div class="stat-value">{{ market }}</div>
-      </div>
-    </div>
-  </section>
+    </section>
 
-  <section class="grid">
-    <a class="card" href="{{ url_for('suppliers') }}" data-sound="next">
-      <div class="card-icon">🤝</div>
-      <h3>Fornecedores</h3>
-      <p>Contactos, notas e parceiros preferidos.</p>
-    </a>
-    <a class="card" href="{{ url_for('items') }}" data-sound="next">
-      <div class="card-icon">🧾</div>
-      <h3>Itens</h3>
-      <p>Itens com fornecedor, tipo e zona.</p>
-    </a>
-    <a class="card" href="{{ url_for('orders') }}" data-sound="next">
-      <div class="card-icon">📦</div>
-      <h3>Encomendas</h3>
-      <p>Encomendas por fornecedor com filtros.</p>
-    </a>
-    <a class="card" href="{{ url_for('stock') }}" data-sound="next">
-      <div class="card-icon">🥕</div>
-      <h3>Stock</h3>
-      <p>Quantidades e alertas de baixo stock.</p>
-    </a>
-    <a class="card" href="{{ url_for('market') }}" data-sound="next">
-      <div class="card-icon">🛒</div>
-      <h3>Lista de Mercado</h3>
-      <p>Compras rápidas com confirmação.</p>
-    </a>
-  </section>
+    <section class="panel home-block span-1 notice-card">
+      <div class="notice-head">
+        <h2>Avisos</h2>
+        {% if notices_new_count > 0 %}
+        <span class="notice-pill" id="notice-new-count" data-count="{{ notices_new_count }}">
+          {{ notices_new_count }} {{ "nova" if notices_new_count == 1 else "novas" }}
+        </span>
+        {% endif %}
+      </div>
 
-  {% if user and user[2] == "admin" %}
-  <section class="panel">
-    <h2>Administração</h2>
-    <p>Repor dados de teste e voltar ao estado inicial.</p>
-    <form method="post" action="{{ url_for('admin_seed') }}">
+      {% if can_add_notices %}
+      <form class="notice-form hidden" id="notice-form" method="post" action="{{ url_for('notices_add') }}">
+        <label class="full">
+          Novo aviso
+          <input
+            type="text"
+            name="text"
+            id="notice-input"
+            maxlength="220"
+            placeholder="Escreve aqui o aviso para a equipa..."
+            required
+          />
+        </label>
+        <div class="step-actions">
+          <button class="primary" type="submit" data-sound="save">
+            Guardar aviso
+          </button>
+          <button type="button" class="pill toggle" id="notice-cancel">Cancelar</button>
+        </div>
+      </form>
+      {% endif %}
+
+      <div class="notice-list">
+        {% for notice in notices %}
+        <article class="notice-swipe" data-notice-id="{{ notice.id }}" data-notice-new="{{ '1' if notice.is_new else '0' }}" data-can-manage="{{ '1' if can_manage_notices else '0' }}">
+          <div class="notice-delete-underlay" aria-hidden="true">
+            <i class="fa-solid fa-trash"></i>
+          </div>
+          <div class="notice-item">
+            <p>{{ notice.text }}</p>
+            <div class="notice-meta">
+              <small>{{ notice.created_at }}</small>
+            </div>
+            {% if notice.is_new %}
+            <span class="notice-badge"><i class="fa-solid fa-bell"></i></span>
+            {% endif %}
+          </div>
+        </article>
+        {% else %}
+        <div class="table-row empty">Sem avisos no momento.</div>
+        {% endfor %}
+      </div>
+
+      {% if can_add_notices %}
+      <div class="notice-add-wrap">
+        <button type="button" class="notice-add-btn" id="notice-toggle" aria-expanded="false" aria-controls="notice-form">
+          <i class="fa-solid fa-plus" aria-hidden="true"></i>
+        </button>
+      </div>
+      {% endif %}
+    </section>
+
+    <section class="panel home-block span-3 options-block">
+      <div class="grid">
+        <a class="card" href="{{ url_for('suppliers') }}" data-sound="next">
+          <div class="card-icon" aria-hidden="true"><i class="fa-solid fa-handshake"></i></div>
+          <h3>Fornecedores</h3>
+          <p>Contactos, notas e parceiros preferidos.</p>
+        </a>
+        <a class="card" href="{{ url_for('items') }}" data-sound="next">
+          <div class="card-icon" aria-hidden="true"><i class="fa-solid fa-receipt"></i></div>
+          <h3>Itens</h3>
+          <p>Itens com fornecedor, tipo e zona.</p>
+        </a>
+        <a class="card" href="{{ url_for('orders') }}" data-sound="next">
+          <div class="card-icon" aria-hidden="true"><i class="fa-solid fa-box-open"></i></div>
+          <h3>Encomendas</h3>
+          <p>Encomendas por fornecedor com filtros.</p>
+        </a>
+        <a class="card" href="{{ url_for('stock') }}" data-sound="next">
+          <div class="card-icon" aria-hidden="true"><i class="fa-solid fa-boxes-stacked"></i></div>
+          <h3>Stock</h3>
+          <p>Quantidades e alertas de baixo stock.</p>
+        </a>
+        <a class="card" href="{{ url_for('todo') }}" data-sound="next">
+          <div class="card-icon" aria-hidden="true"><i class="fa-solid fa-list-check"></i></div>
+          <h3>To-Do Diario</h3>
+          <p>Checklist por zonas para faltas do bar e cozinha.</p>
+        </a>
+        <a class="card" href="{{ url_for('market') }}" data-sound="next">
+          <div class="card-icon" aria-hidden="true"><i class="fa-solid fa-cart-shopping"></i></div>
+          <h3>Lista de Mercado</h3>
+          <p>Compras rápidas com confirmação.</p>
+        </a>
+      </div>
+    </section>
+
+    {% if user and user[2] == "admin" %}
+    <form class="admin-reset-form home-block span-3" method="post" action="{{ url_for('admin_seed') }}">
       <button
-        class="primary"
+        class="danger-muted"
         type="submit"
         onclick="return confirm('Repor dados de teste?')"
         data-sound="save"
         data-toast="Dados de teste repostos"
       >
-        Repor dados de teste
+        Repor
       </button>
     </form>
-  </section>
+    {% endif %}
+  </div>
+
+  {% if can_add_notices %}
+  <script>
+    (() => {
+      const toggleBtn = document.getElementById("notice-toggle");
+      const cancelBtn = document.getElementById("notice-cancel");
+      const form = document.getElementById("notice-form");
+      const input = document.getElementById("notice-input");
+      if (!toggleBtn || !form) return;
+
+      const showForm = () => {
+        form.classList.remove("hidden");
+        toggleBtn.classList.add("hidden");
+        toggleBtn.setAttribute("aria-expanded", "true");
+        if (input) input.focus();
+      };
+
+      const hideForm = () => {
+        form.classList.add("hidden");
+        toggleBtn.classList.remove("hidden");
+        toggleBtn.setAttribute("aria-expanded", "false");
+      };
+
+      toggleBtn.addEventListener("click", showForm);
+      if (cancelBtn) cancelBtn.addEventListener("click", hideForm);
+    })();
+  </script>
   {% endif %}
+  {% if can_manage_notices %}
+  <script src="https://cdn.jsdelivr.net/npm/interactjs/dist/interact.min.js"></script>
+  {% endif %}
+  <script>
+    (() => {
+      const swipeCards = Array.from(document.querySelectorAll('.notice-swipe[data-can-manage="1"]'));
+      if (!swipeCards.length) return;
+      if (!window.interact) return;
+      const countEl = document.getElementById("notice-new-count");
+      const noticeList = document.querySelector(".notice-list");
+
+      const renderCount = (count) => {
+        if (!countEl) return;
+        if (count <= 0) {
+          countEl.remove();
+          return;
+        }
+        countEl.dataset.count = String(count);
+        countEl.textContent = `${count} ${count === 1 ? "nova" : "novas"}`;
+      };
+
+      const renderEmptyStateIfNeeded = () => {
+        if (!noticeList) return;
+        const remaining = noticeList.querySelectorAll(".notice-swipe").length;
+        const emptyRow = noticeList.querySelector(".table-row.empty");
+        if (remaining > 0) {
+          if (emptyRow) emptyRow.remove();
+          return;
+        }
+        if (emptyRow) return;
+        const row = document.createElement("div");
+        row.className = "table-row empty";
+        row.textContent = "Sem avisos no momento.";
+        noticeList.appendChild(row);
+      };
+
+      const deleteNotice = async (card) => {
+        const id = card.dataset.noticeId;
+        if (!id) return;
+        const wasNew = card.dataset.noticeNew === "1";
+        if (wasNew && countEl) {
+          const current = Number(countEl.dataset.count || "0");
+          renderCount(Math.max(0, current - 1));
+        }
+        card.classList.add("deleting", "deleted");
+        setTimeout(() => {
+          card.remove();
+          renderEmptyStateIfNeeded();
+        }, 80);
+
+        try {
+          const res = await fetch(`/notices/${id}/delete`, {
+            method: "POST",
+            headers: { "X-Requested-With": "XMLHttpRequest" },
+          });
+          if (!res.ok) {
+            if (typeof toast === "function") toast("Erro ao remover aviso.", "error");
+            return;
+          }
+        } catch (err) {
+          if (typeof toast === "function") toast("Erro ao remover aviso.", "error");
+        }
+      };
+
+      swipeCards.forEach((card) => {
+        const item = card.querySelector(".notice-item");
+        if (!item) return;
+
+        const setX = (x) => {
+          const clamped = Math.max(-120, Math.min(0, x));
+          card.dataset.swipeX = String(clamped);
+          card.style.setProperty("--swipe-x", `${clamped}px`);
+        };
+
+        window.interact(item).draggable({
+          startAxis: "x",
+          lockAxis: "x",
+          inertia: false,
+          listeners: {
+            start() {
+              if (card.classList.contains("deleting")) return;
+              card.classList.add("dragging");
+            },
+            move(event) {
+              if (card.classList.contains("deleting")) return;
+              const current = Number(card.dataset.swipeX || "0");
+              setX(current + event.dx);
+            },
+            end() {
+              if (card.classList.contains("deleting")) return;
+              card.classList.remove("dragging");
+              const current = Math.abs(Number(card.dataset.swipeX || "0"));
+              if (current >= 8) {
+                card.classList.add("deleting");
+                setX(-120);
+                deleteNotice(card);
+                return;
+              }
+              card.dataset.swipeX = "0";
+              card.style.removeProperty("--swipe-x");
+            },
+          },
+        });
+      });
+    })();
+  </script>
 {% endblock %}

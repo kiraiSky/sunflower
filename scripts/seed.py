@@ -38,6 +38,51 @@ ITEMS = [
     ("Mercado", "Guardanapos Bar", "Descartaveis", "Armazem", "cx"),
 ]
 
+MARKET_CATALOG = [
+    ("Tomate", "Legumes e Verduras", "Armazem", "kg"),
+    ("Cebola", "Legumes e Verduras", "Armazem", "kg"),
+    ("Alho", "Legumes e Verduras", "Armazem", "kg"),
+    ("Batata", "Legumes e Verduras", "Armazem", "kg"),
+    ("Cenoura", "Legumes e Verduras", "Armazem", "kg"),
+    ("Curgete", "Legumes e Verduras", "Armazem", "kg"),
+    ("Beringela", "Legumes e Verduras", "Armazem", "kg"),
+    ("Pimento Verde", "Legumes e Verduras", "Armazem", "kg"),
+    ("Pimento Vermelho", "Legumes e Verduras", "Armazem", "kg"),
+    ("Alface", "Legumes e Verduras", "Armazem", "un"),
+    ("Rucula", "Legumes e Verduras", "Armazem", "un"),
+    ("Espinafres", "Legumes e Verduras", "Armazem", "kg"),
+    ("Cogumelos Frescos", "Legumes e Verduras", "Armazem", "kg"),
+    ("Brocolos", "Legumes e Verduras", "Armazem", "kg"),
+    ("Couve Flor", "Legumes e Verduras", "Armazem", "kg"),
+    ("Pepino", "Legumes e Verduras", "Armazem", "kg"),
+    ("Lima", "Frutas", "Armazem", "kg"),
+    ("Laranja", "Frutas", "Armazem", "kg"),
+    ("Maca", "Frutas", "Armazem", "kg"),
+    ("Pera", "Frutas", "Armazem", "kg"),
+    ("Banana", "Frutas", "Armazem", "kg"),
+    ("Morango", "Frutas", "Armazem", "kg"),
+    ("Abacaxi", "Frutas", "Armazem", "un"),
+    ("Maracuja", "Frutas", "Armazem", "kg"),
+    ("Framboesa", "Frutas", "Armazem", "kg"),
+    ("Mirtilo", "Frutas", "Armazem", "kg"),
+    ("Manga", "Frutas", "Armazem", "kg"),
+    ("Abacate", "Frutas", "Armazem", "kg"),
+    ("Salsa", "Mercearia", "Armazem", "un"),
+    ("Coentros", "Mercearia", "Armazem", "un"),
+    ("Cebolinho", "Mercearia", "Armazem", "un"),
+    ("Manjericao", "Mercearia", "Armazem", "un"),
+    ("Alecrim", "Mercearia", "Armazem", "un"),
+    ("Louro", "Mercearia", "Armazem", "un"),
+    ("Oreganos", "Mercearia", "Despensa", "un"),
+    ("Canela em Po", "Mercearia", "Despensa", "un"),
+    ("Cominhos", "Mercearia", "Despensa", "un"),
+    ("Paprica Doce", "Mercearia", "Despensa", "un"),
+    ("Pimenta Preta", "Mercearia", "Despensa", "un"),
+    ("Noz Moscada", "Mercearia", "Despensa", "un"),
+    ("Vinagre Balsamico", "Mercearia", "Despensa", "un"),
+    ("Azeite Virgem Extra", "Mercearia", "Despensa", "un"),
+]
+
 
 STOCK = [
     ("Rolo de cozinha", "un", 8, 4),
@@ -113,6 +158,28 @@ def seed_db(reset=False, db_path=DB_PATH):
                 VALUES (?, ?, ?, ?, ?, 1)
                 """,
                 (supplier_map.get(supplier_name), name, item_type, item_subtype, unit),
+            )
+
+    # Ensure Mercado catalog exists even on non-empty databases.
+    mercado_id = supplier_map.get("Mercado")
+    if mercado_id:
+        existing_market_names = {
+            row["name"].strip().lower()
+            for row in conn.execute(
+                "SELECT name FROM items WHERE supplier_id = ?",
+                (mercado_id,),
+            ).fetchall()
+        }
+        for name, item_type, item_subtype, unit in MARKET_CATALOG:
+            key = name.strip().lower()
+            if key in existing_market_names:
+                continue
+            conn.execute(
+                """
+                INSERT INTO items (supplier_id, name, item_type, item_subtype, unit, active)
+                VALUES (?, ?, ?, ?, ?, 1)
+                """,
+                (mercado_id, name, item_type, item_subtype, unit),
             )
 
     stock_existing = conn.execute("SELECT COUNT(*) AS c FROM stock_items").fetchone()["c"]

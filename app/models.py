@@ -64,6 +64,58 @@ CREATE TABLE IF NOT EXISTS market_list (
     listed_at TEXT,
     purchased_at TEXT
 );
+
+CREATE TABLE IF NOT EXISTS notices (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    text TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    created_by INTEGER,
+    FOREIGN KEY (created_by) REFERENCES users (id)
+);
+
+CREATE TABLE IF NOT EXISTS todo_catalog (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    area TEXT NOT NULL,
+    district TEXT NOT NULL,
+    item_name TEXT NOT NULL,
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    active INTEGER NOT NULL DEFAULT 1,
+    UNIQUE (area, district, item_name)
+);
+
+CREATE TABLE IF NOT EXISTS todo_checks (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    check_date TEXT NOT NULL,
+    area TEXT NOT NULL,
+    created_by INTEGER,
+    created_at TEXT NOT NULL,
+    UNIQUE (check_date, area),
+    FOREIGN KEY (created_by) REFERENCES users (id)
+);
+
+CREATE TABLE IF NOT EXISTS todo_check_entries (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    check_id INTEGER NOT NULL,
+    district TEXT NOT NULL,
+    item_name TEXT NOT NULL,
+    is_missing INTEGER NOT NULL DEFAULT 0,
+    notes TEXT,
+    UNIQUE (check_id, district, item_name),
+    FOREIGN KEY (check_id) REFERENCES todo_checks (id)
+);
+
+CREATE TABLE IF NOT EXISTS todo_order_links (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    check_id INTEGER NOT NULL,
+    item_id INTEGER NOT NULL,
+    order_id INTEGER NOT NULL,
+    qty REAL NOT NULL DEFAULT 1,
+    created_at TEXT NOT NULL,
+    UNIQUE (check_id, item_id),
+    FOREIGN KEY (check_id) REFERENCES todo_checks (id),
+    FOREIGN KEY (item_id) REFERENCES items (id),
+    FOREIGN KEY (order_id) REFERENCES orders (id)
+);
 """
 
 
@@ -76,6 +128,7 @@ def init_db(app):
         conn.executescript(SCHEMA)
         migrate_db(conn)
         ensure_admin(conn)
+        ensure_todo_catalog(conn)
 
 
 def ensure_admin(conn):
@@ -114,3 +167,37 @@ def migrate_db(conn):
         conn.execute("ALTER TABLE market_list ADD COLUMN listed_at TEXT")
     if "purchased_at" not in market_col_names:
         conn.execute("ALTER TABLE market_list ADD COLUMN purchased_at TEXT")
+
+
+def ensure_todo_catalog(conn):
+    defaults = [
+        ("bar", "Balcao", "Gelo", 1),
+        ("bar", "Balcao", "Limao", 2),
+        ("bar", "Balcao", "Hortela", 3),
+        ("bar", "Balcao", "Guardanapos", 4),
+        ("bar", "Balcao", "Palhinhas", 5),
+        ("bar", "Bebidas", "Agua", 1),
+        ("bar", "Bebidas", "Refrigerantes", 2),
+        ("bar", "Bebidas", "Tonica", 3),
+        ("bar", "Bebidas", "Cerveja Pressao", 4),
+        ("bar", "Bebidas", "Vinho da Casa", 5),
+        ("cozinha", "Frescos", "Cebola", 1),
+        ("cozinha", "Frescos", "Alho", 2),
+        ("cozinha", "Frescos", "Tomate", 3),
+        ("cozinha", "Frescos", "Limao", 4),
+        ("cozinha", "Frios", "Ovos", 1),
+        ("cozinha", "Frios", "Manteiga", 2),
+        ("cozinha", "Frios", "Natas", 3),
+        ("cozinha", "Secos", "Arroz", 1),
+        ("cozinha", "Secos", "Massa", 2),
+        ("cozinha", "Secos", "Azeite", 3),
+        ("cozinha", "Secos", "Sal", 4),
+    ]
+    for area, district, item_name, sort_order in defaults:
+        conn.execute(
+            """
+            INSERT OR IGNORE INTO todo_catalog (area, district, item_name, sort_order, active)
+            VALUES (?, ?, ?, ?, 1)
+            """,
+            (area, district, item_name, sort_order),
+        )

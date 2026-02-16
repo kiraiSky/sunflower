@@ -1,5 +1,6 @@
 import json
 import unicodedata
+from datetime import datetime, timezone
 
 from flask import (
     flash,
@@ -49,6 +50,11 @@ GROUP_TO_SUGGESTED_ZONES = {
     "Laticinios": ["Frigorifico cinzento cozinha", "Frigorifico branco escritorio"],
     "Pastelaria": ["Frigorifico de bolos", "Congelador cozinha"],
     "Congelados": ["Congelador cozinha", "Congelador escritorio"],
+}
+
+TODO_AREA_LABELS = {
+    "bar": "Bar",
+    "cozinha": "Cozinha",
 }
 
 
@@ -149,6 +155,8 @@ def register_routes(app):
     def index():
         if (redir := login_required()) is not None:
             return redir
+        notices = []
+        notices_new_count = 0
         with get_db(app) as conn:
             suppliers = conn.execute("SELECT COUNT(*) FROM suppliers").fetchone()[0]
             orders = conn.execute("SELECT COUNT(*) FROM orders").fetchone()[0]
@@ -165,6 +173,40 @@ def register_routes(app):
                   AND LOWER(COALESCE(s.name, '')) = 'mercado'
                 """
             ).fetchone()[0]
+            notice_rows = conn.execute(
+                """
+                SELECT id, text, created_at
+                FROM notices
+                ORDER BY created_at DESC, id DESC
+                LIMIT 8
+                """
+            ).fetchall()
+
+        today = datetime.now(timezone.utc).date()
+        for row in notice_rows:
+            created_date = None
+            try:
+                created_date = datetime.strptime((row[2] or "").strip(), "%Y-%m-%d").date()
+            except ValueError:
+                pass
+            is_new = bool(
+                created_date
+                and 0 <= (today - created_date).days < 3
+            )
+            if is_new:
+                notices_new_count += 1
+            notices.append(
+                {
+                    "id": row[0],
+                    "text": row[1],
+                    "created_at": created_date.strftime("%d/%m/%Y") if created_date else (row[2] or ""),
+                    "is_new": is_new,
+                }
+            )
+
+        role = (session.get("role") or "").strip().lower()
+        can_add_notices = role in {"admin", "manager", "gestor"}
+
         return render_template(
             "index.html",
             user=current_user(),
@@ -172,6 +214,548 @@ def register_routes(app):
             orders=orders,
             low_stock=low_stock,
             market=market,
+            notices=notices,
+            notices_new_count=notices_new_count,
+            can_add_notices=can_add_notices,
+            can_manage_notices=can_add_notices,
+        )
+
+    @app.route("/notices", methods=["POST"])
+    def notices_add():
+        if (redir := login_required()) is not None:
+            return redir
+
+        role = (session.get("role") or "").strip().lower()
+        if role not in {"admin", "manager", "gestor"}:
+            flash("Apenas gestores podem criar avisos.", "error")
+            return redirect(url_for("index"))
+
+        text = normalize_text(request.form.get("text", ""))
+        if not text:
+            flash("Escreva um aviso antes de guardar.", "error")
+            return redirect(url_for("index"))
+        if len(text) > 220:
+            flash("O aviso pode ter no maximo 220 caracteres.", "error")
+            return redirect(url_for("index"))
+
+        with get_db(app) as conn:
+            conn.execute(
+                "INSERT INTO notices (text, created_at, created_by) VALUES (?, ?, ?)",
+                (text, now_iso(), session.get("user_id")),
+            )
+        flash("Aviso adicionado.", "ok")
+        return redirect(url_for("index"))
+
+    @app.route("/notices/<int:notice_id>/delete", methods=["POST"])
+    def notices_delete(notice_id):
+        if (redir := login_required()) is not None:
+            return redir
+
+        role = (session.get("role") or "").strip().lower()
+        if role not in {"admin", "manager", "gestor"}:
+            return jsonify({"ok": False, "error": "Acesso nao autorizado."}), 403
+
+        with get_db(app) as conn:
+            cur = conn.execute("DELETE FROM notices WHERE id = ?", (notice_id,))
+            if cur.rowcount == 0:
+                return jsonify({"ok": False, "error": "Aviso nao encontrado."}), 404
+
+        return jsonify({"ok": True})
+
+    @app.route("/todo", methods=["GET", "POST"])
+    def todo():
+        if (redir := login_required()) is not None:
+            return redir
+
+        selected_area = normalize_text(request.args.get("area", "bar")).lower()
+        today_iso = now_iso()
+        selected_date = normalize_text(request.args.get("date", today_iso))
+        edit_mode = request.args.get("edit", "") == "1"
+        if selected_area not in TODO_AREA_LABELS:
+            selected_area = "bar"
+        try:
+            datetime.strptime(selected_date, "%Y-%m-%d")
+        except ValueError:
+            selected_date = today_iso
+        is_today = selected_date == today_iso
+        if not is_today:
+            edit_mode = False
+
+        if request.method == "POST":
+            selected_area = normalize_text(request.form.get("area", selected_area)).lower()
+            if selected_area not in TODO_AREA_LABELS:
+                selected_area = "bar"
+
+            raw_missing = (request.form.get("missing_items") or "").strip()
+            parsed_missing = []
+            if raw_missing:
+                try:
+                    parsed = json.loads(raw_missing)
+                except json.JSONDecodeError:
+                    parsed = []
+                if isinstance(parsed, list):
+                    parsed_missing = parsed
+
+            selected_pairs = set()
+            for entry in parsed_missing:
+                if not isinstance(entry, dict):
+                    continue
+                district = normalize_text(entry.get("district", ""))
+                item_name = normalize_text(entry.get("item_name", ""))
+                if district and item_name:
+                    selected_pairs.add((district, item_name))
+
+            with get_db(app) as conn:
+                catalog_rows = conn.execute(
+                    """
+                    SELECT district, item_name
+                    FROM todo_catalog
+                    WHERE active = 1 AND area = ?
+                    ORDER BY district, sort_order, item_name
+                    """,
+                    (selected_area,),
+                ).fetchall()
+                valid_pairs = {(row[0], row[1]) for row in catalog_rows}
+                selected_pairs = {pair for pair in selected_pairs if pair in valid_pairs}
+
+                check_date = now_iso()
+                conn.execute(
+                    """
+                    INSERT OR IGNORE INTO todo_checks (check_date, area, created_by, created_at)
+                    VALUES (?, ?, ?, ?)
+                    """,
+                    (check_date, selected_area, session.get("user_id"), check_date),
+                )
+                check_row = conn.execute(
+                    "SELECT id FROM todo_checks WHERE check_date = ? AND area = ?",
+                    (check_date, selected_area),
+                ).fetchone()
+                check_id = check_row[0]
+
+                conn.execute("DELETE FROM todo_check_entries WHERE check_id = ?", (check_id,))
+                for district, item_name in catalog_rows:
+                    conn.execute(
+                        """
+                        INSERT INTO todo_check_entries (check_id, district, item_name, is_missing, notes)
+                        VALUES (?, ?, ?, ?, '')
+                        """,
+                        (check_id, district, item_name, 1 if (district, item_name) in selected_pairs else 0),
+                    )
+
+            if selected_pairs:
+                return redirect(url_for("todo_order_review", area=selected_area))
+
+            flash("Checklist diaria guardada.", "ok")
+            return redirect(url_for("todo", area=selected_area, date=today_iso))
+
+        with get_db(app) as conn:
+            catalog_rows = conn.execute(
+                """
+                SELECT district, item_name
+                FROM todo_catalog
+                WHERE active = 1 AND area = ?
+                ORDER BY district, sort_order, item_name
+                """,
+                (selected_area,),
+            ).fetchall()
+
+            check_row = conn.execute(
+                "SELECT id FROM todo_checks WHERE check_date = ? AND area = ?",
+                (selected_date, selected_area),
+            ).fetchone()
+
+            missing_pairs = set()
+            report_by_district = []
+            check_exists_today = bool(check_row)
+            if check_row:
+                rows = conn.execute(
+                    """
+                    SELECT district, item_name
+                    FROM todo_check_entries
+                    WHERE check_id = ? AND is_missing = 1
+                    """,
+                    (check_row[0],),
+                ).fetchall()
+                missing_pairs = {(row[0], row[1]) for row in rows}
+
+                report_rows = conn.execute(
+                    """
+                    SELECT district, item_name, is_missing
+                    FROM todo_check_entries
+                    WHERE check_id = ?
+                    ORDER BY district, item_name
+                    """,
+                    (check_row[0],),
+                ).fetchall()
+
+                grouped = {}
+                for district, item_name, is_missing in report_rows:
+                    grouped.setdefault(district, []).append(
+                        {"item_name": item_name, "is_missing": bool(is_missing)}
+                    )
+                report_by_district = list(grouped.items())
+
+            history_rows = conn.execute(
+                """
+                SELECT tc.check_date
+                FROM todo_checks tc
+                WHERE tc.area = ?
+                ORDER BY tc.check_date DESC
+                LIMIT 30
+                """,
+                (selected_area,),
+            ).fetchall()
+
+        districts = {}
+        for district, item_name in catalog_rows:
+            districts.setdefault(district, []).append(item_name)
+
+        total_items = sum(len(items) for items in districts.values())
+        total_missing = len(missing_pairs)
+        history_dates = []
+        for row in history_rows:
+            date_iso = row[0]
+            try:
+                display = datetime.strptime(date_iso, "%Y-%m-%d").strftime("%d/%m/%Y")
+            except ValueError:
+                display = date_iso
+            history_dates.append(
+                {
+                    "iso": date_iso,
+                    "display": display,
+                    "selected": date_iso == selected_date,
+                }
+            )
+
+        return render_template(
+            "todo.html",
+            user=current_user(),
+            area_labels=TODO_AREA_LABELS,
+            selected_area=selected_area,
+            selected_date=selected_date,
+            districts=list(districts.items()),
+            missing_pairs=missing_pairs,
+            total_items=total_items,
+            total_missing=total_missing,
+            today_iso=today_iso,
+            check_exists_today=check_exists_today,
+            report_by_district=report_by_district,
+            edit_mode=edit_mode,
+            is_today=is_today,
+            history_dates=history_dates,
+        )
+
+    @app.route("/todo/order-review", methods=["GET", "POST"])
+    def todo_order_review():
+        if (redir := login_required()) is not None:
+            return redir
+
+        selected_area = normalize_text(request.args.get("area", "bar")).lower()
+        if selected_area not in TODO_AREA_LABELS:
+            selected_area = "bar"
+
+        today = now_iso()
+        with get_db(app) as conn:
+            check_row = conn.execute(
+                "SELECT id FROM todo_checks WHERE check_date = ? AND area = ?",
+                (today, selected_area),
+            ).fetchone()
+            if not check_row:
+                flash("Ainda nao existe checklist para hoje nesta area.", "error")
+                return redirect(url_for("todo", area=selected_area))
+
+            missing_rows = conn.execute(
+                """
+                SELECT district, item_name
+                FROM todo_check_entries
+                WHERE check_id = ? AND is_missing = 1
+                ORDER BY district, item_name
+                """,
+                (check_row[0],),
+            ).fetchall()
+
+            if not missing_rows:
+                flash("Nao existem faltas para encomendar.", "ok")
+                return redirect(url_for("todo", area=selected_area))
+
+            check_id = check_row[0]
+            candidate_rows = conn.execute(
+                """
+                SELECT
+                    i.id,
+                    i.name,
+                    COALESCE(i.unit, ''),
+                    COALESCE(s.id, 0) AS supplier_id,
+                    COALESCE(s.name, 'Sem fornecedor') AS supplier_name
+                FROM items i
+                LEFT JOIN suppliers s ON s.id = i.supplier_id
+                WHERE i.active = 1
+                ORDER BY i.name, s.name
+                """
+            ).fetchall()
+            existing_links_rows = conn.execute(
+                """
+                SELECT item_id, order_id, qty
+                FROM todo_order_links
+                WHERE check_id = ?
+                """,
+                (check_id,),
+            ).fetchall()
+
+        missing_lookup = {}
+        for district, item_name in missing_rows:
+            key = norm_key(item_name)
+            missing_lookup.setdefault(key, {"item_name": item_name, "districts": set()})
+            missing_lookup[key]["districts"].add(district)
+
+        candidates_by_key = {}
+        all_candidates = []
+        for row in candidate_rows:
+            candidate = {
+                "item_id": row[0],
+                "item_name": row[1],
+                "unit": row[2],
+                "supplier_id": row[3],
+                "supplier_name": row[4],
+            }
+            key = norm_key(row[1])
+            candidates_by_key.setdefault(key, []).append(candidate)
+            all_candidates.append((key, candidate))
+
+        existing_links = {
+            row[0]: {"order_id": row[1], "qty": float(row[2] or 0)}
+            for row in existing_links_rows
+        }
+
+        report_rows = []
+        default_selected_ids = []
+        for key, info in missing_lookup.items():
+            candidates = candidates_by_key.get(key, [])
+            best = candidates[0] if candidates else None
+
+            if not best:
+                fuzzy_matches = []
+                for item_key, candidate in all_candidates:
+                    if key in item_key or item_key in key:
+                        fuzzy_matches.append(candidate)
+                if fuzzy_matches:
+                    fuzzy_matches.sort(key=lambda c: len(normalize_text(c["item_name"])))
+                    best = fuzzy_matches[0]
+
+            row = {
+                "item_name": info["item_name"],
+                "districts": sorted(info["districts"]),
+                "candidate": best,
+                "has_candidate": bool(best),
+                "already_ordered": bool(best and best["item_id"] in existing_links),
+            }
+            report_rows.append(row)
+            if best:
+                default_selected_ids.append(str(best["item_id"]))
+
+        if request.method == "POST":
+            action = (request.form.get("action") or "").strip().lower()
+            selected_ids = request.form.getlist("selected_item_ids")
+            selected_ids_int = []
+            for raw in selected_ids:
+                try:
+                    selected_ids_int.append(int(raw))
+                except ValueError:
+                    continue
+            selected_ids_int = list(dict.fromkeys(selected_ids_int))
+
+            desired_ids = set(selected_ids_int) if action != "skip" else set()
+            existing_ids = set(existing_links.keys())
+            to_add_ids = sorted(desired_ids - existing_ids)
+            to_remove_ids = sorted(existing_ids - desired_ids)
+
+            if action != "skip" and not desired_ids and not existing_ids:
+                flash("Nenhum item selecionado para encomenda.", "error")
+                return redirect(url_for("todo_order_review", area=selected_area))
+
+            ordered_at = now_iso()
+            added_count = 0
+            removed_count = 0
+
+            with get_db(app) as conn:
+                # Remove previously ordered items that are no longer selected.
+                for item_id in to_remove_ids:
+                    link = existing_links.get(item_id)
+                    if not link:
+                        continue
+                    order_id = int(link["order_id"])
+                    qty_to_remove = float(link["qty"])
+
+                    order_row = conn.execute(
+                        """
+                        SELECT id, item_id, qty, status
+                        FROM orders
+                        WHERE id = ?
+                        """,
+                        (order_id,),
+                    ).fetchone()
+                    if not order_row:
+                        conn.execute(
+                            "DELETE FROM todo_order_links WHERE check_id = ? AND item_id = ?",
+                            (check_id, item_id),
+                        )
+                        continue
+
+                    current_qty = float(order_row[2] or 0)
+                    new_qty = current_qty - qty_to_remove
+                    if new_qty <= 0:
+                        conn.execute("DELETE FROM orders WHERE id = ?", (order_id,))
+                        conn.execute("DELETE FROM market_list WHERE order_id = ?", (order_id,))
+                    else:
+                        conn.execute("UPDATE orders SET qty = ? WHERE id = ?", (new_qty, order_id))
+                        market_row = conn.execute(
+                            """
+                            SELECT id, COALESCE(unit, '')
+                            FROM market_list
+                            WHERE order_id = ?
+                            LIMIT 1
+                            """,
+                            (order_id,),
+                        ).fetchone()
+                        if market_row:
+                            unit = normalize_text(market_row[1])
+                            qty_text = f"{new_qty:.2f}".rstrip("0").rstrip(".")
+                            if unit:
+                                qty_text = f"{qty_text} {unit}"
+                            conn.execute(
+                                """
+                                UPDATE market_list
+                                SET qty_value = ?, qty = ?
+                                WHERE id = ?
+                                """,
+                                (new_qty, qty_text, market_row[0]),
+                            )
+
+                    conn.execute(
+                        "DELETE FROM todo_order_links WHERE check_id = ? AND item_id = ?",
+                        (check_id, item_id),
+                    )
+                    removed_count += 1
+
+                # Add new selected items that were not ordered yet for this checklist.
+                if to_add_ids:
+                    placeholders = ", ".join("?" for _ in to_add_ids)
+                    item_rows = conn.execute(
+                        f"""
+                        SELECT
+                            i.id,
+                            i.supplier_id,
+                            i.name,
+                            COALESCE(s.name, ''),
+                            COALESCE(i.unit, '')
+                        FROM items i
+                        LEFT JOIN suppliers s ON s.id = i.supplier_id
+                        WHERE i.id IN ({placeholders})
+                        """,
+                        tuple(to_add_ids),
+                    ).fetchall()
+                    item_lookup = {row[0]: row for row in item_rows}
+
+                    for item_id in to_add_ids:
+                        item_row = item_lookup.get(item_id)
+                        if not item_row:
+                            continue
+
+                        qty = 1.0
+                        supplier_id = item_row[1]
+                        item_name = item_row[2]
+                        supplier_name = normalize_text(item_row[3]).lower()
+                        item_unit = normalize_text(item_row[4])
+                        is_market_supplier = supplier_name == "mercado"
+                        order_id = None
+
+                        if is_market_supplier:
+                            cur = conn.execute(
+                                """
+                                INSERT INTO orders (supplier_id, item_id, qty, status, total, ordered_at)
+                                VALUES (?, ?, ?, ?, ?, ?)
+                                """,
+                                (supplier_id, item_id, qty, "pending", 0, ordered_at),
+                            )
+                            order_id = cur.lastrowid
+                            qty_text = f"{qty:.2f}".rstrip("0").rstrip(".")
+                            if item_unit:
+                                qty_text = f"{qty_text} {item_unit}"
+                            conn.execute(
+                                """
+                                INSERT INTO market_list (item, qty, notes, checked, item_id, order_id, qty_value, unit, listed_at, purchased_at)
+                                VALUES (?, ?, '', 0, ?, ?, ?, ?, ?, NULL)
+                                """,
+                                (item_name, qty_text, item_id, order_id, qty, item_unit, ordered_at),
+                            )
+                        else:
+                            pending_row = conn.execute(
+                                """
+                                SELECT id
+                                FROM orders
+                                WHERE item_id = ? AND status = 'pending'
+                                ORDER BY id DESC
+                                LIMIT 1
+                                """,
+                                (item_id,),
+                            ).fetchone()
+                            if pending_row:
+                                order_id = pending_row[0]
+                                conn.execute(
+                                    """
+                                    UPDATE orders
+                                    SET qty = qty + ?, ordered_at = ?
+                                    WHERE id = ?
+                                    """,
+                                    (qty, ordered_at, order_id),
+                                )
+                            else:
+                                cur = conn.execute(
+                                    """
+                                    INSERT INTO orders (supplier_id, item_id, qty, status, total, ordered_at)
+                                    VALUES (?, ?, ?, ?, ?, ?)
+                                    """,
+                                    (supplier_id, item_id, qty, "pending", 0, ordered_at),
+                                )
+                                order_id = cur.lastrowid
+
+                        if order_id:
+                            conn.execute(
+                                """
+                                INSERT OR REPLACE INTO todo_order_links (check_id, item_id, order_id, qty, created_at)
+                                VALUES (?, ?, ?, ?, ?)
+                                """,
+                                (check_id, item_id, order_id, qty, ordered_at),
+                            )
+                            added_count += 1
+
+            if action == "skip":
+                if removed_count:
+                    flash("Checklist atualizada e encomendas removidas.", "ok")
+                else:
+                    flash("Checklist guardada sem encomenda.", "ok")
+                return redirect(url_for("todo", area=selected_area))
+
+            if added_count == 0 and removed_count == 0:
+                flash("Sem alteracoes de encomenda.", "ok")
+            else:
+                parts = []
+                if added_count:
+                    parts.append(f"{added_count} adicionado(s)")
+                if removed_count:
+                    parts.append(f"{removed_count} removido(s)")
+                flash("Encomenda atualizada: " + " · ".join(parts) + ".", "ok")
+            return redirect(url_for("orders"))
+
+        return render_template(
+            "todo_order_review.html",
+            user=current_user(),
+            area_labels=TODO_AREA_LABELS,
+            selected_area=selected_area,
+            today_iso=today,
+            report_rows=report_rows,
+            default_selected_ids=default_selected_ids,
+            ordered_item_ids={str(item_id) for item_id in existing_links.keys()},
         )
 
     @app.route("/items", methods=["GET", "POST"])
