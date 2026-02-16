@@ -17,6 +17,10 @@ SUPPLIERS = [
     ("Pro Gel Cone", "+351 912 851 503", "", "Detergentes."),
     ("Bio F.F", "+351 960 000 003", "", "Higiene e desinfeccao."),
     ("Mercado", "", "", "Compras locais de apoio diario."),
+    ("A ti Marquinhas (Docaria)", "", "", "Sobremesas e docaria."),
+    ("Ola", "", "", "Gelados e toppings."),
+    ("Aviludo", "", "", "Produtos alimentares e bar."),
+    ("Delta", "", "", "Cafe, acucar e adocante."),
 ]
 
 
@@ -83,6 +87,106 @@ MARKET_CATALOG = [
     ("Azeite Virgem Extra", "Mercearia", "Despensa", "un"),
 ]
 
+REQUESTED_CATALOG = [
+    ("Mercado", "Alfinete", "Bar", "Zona Diversos do bar", "un"),
+    ("Mercado", "Agrafos", "Bar", "Zona Diversos do bar", "un"),
+    ("Mercado", "Caneta esferografica", "Bar", "Zona Diversos do bar", "un"),
+    ("Mercado", "Caneta Marcador", "Bar", "Zona Diversos do bar", "un"),
+    ("Mercado", "Corretor", "Bar", "Zona Diversos do bar", "un"),
+    ("Mercado", "Papel A4", "Bar", "Zona Diversos do bar", "un"),
+    ("Mercado", "Rebucados", "Bar", "Zona Diversos do bar", "un"),
+    ("Mercado", "Palito de dente", "Bar", "Zona Diversos do bar", "un"),
+    ("Mercado", "Baloes", "Bar", "Zona festas/eventos", "un"),
+    ("Mercado", "Confetes", "Bar", "Zona festas/eventos", "un"),
+    ("Mercado", "Velas de aniversario", "Bar", "Zona festas/eventos", "un"),
+    ("Mercado", "Maca", "Frutas", "Zona Frutas", "kg"),
+    ("Mercado", "Laranja", "Frutas", "Zona Frutas", "kg"),
+    ("Mercado", "Banana", "Frutas", "Zona Frutas", "kg"),
+    ("Mercado", "Ananas/Abacaxi", "Frutas", "Zona Frutas", "un"),
+    ("Mercado", "Manga", "Frutas", "Zona Frutas", "kg"),
+    ("Mercado", "Frutos Silvestres", "Frutas", "Zona Frutas", "kg"),
+    ("Mercado", "Lima", "Frutas", "Zona Frutas", "kg"),
+    ("Mercado", "Limao", "Frutas", "Zona Frutas", "kg"),
+    ("Mercado", "Maca Reineta", "Frutas", "Zona Frutas", "kg"),
+    ("Mercado", "Cachaca", "Bar", "Zona Cocktails", "un"),
+    ("Mercado", "Acucar Marrom/Mascavo", "Bar", "Zona Cocktails", "kg"),
+    ("Mercado", "Vodka", "Bar", "Zona Cocktails", "un"),
+    ("Mercado", "Licor Tia Maria", "Bar", "Zona Cocktails", "un"),
+    ("Mercado", "Prosecco/Espumante", "Bar", "Zona Cocktails", "un"),
+    ("Mercado", "Elderflower", "Bar", "Zona Cocktails", "un"),
+    ("Mercado", "Hortela", "Bar", "Zona Cocktails", "un"),
+    ("Mercado", "Gin", "Bar", "Zona Cocktails", "un"),
+    ("Mercado", "Lillet Blanc", "Bar", "Zona Cocktails", "un"),
+    ("Mercado", "Sumo de limao", "Bar", "Zona Cocktails", "un"),
+    ("Mercado", "Monin Maracuja", "Bar", "Zona Cocktails", "un"),
+    ("Mercado", "Bitters", "Bar", "Zona Cocktails", "un"),
+    ("Mercado", "Peach Schnapps", "Bar", "Zona Cocktails", "un"),
+    ("Mercado", "Xarope de Groselha", "Bar", "Zona Cocktails", "un"),
+    ("Mercado", "Bacardi Rum", "Bar", "Zona Cocktails", "un"),
+    ("Mercado", "Jameson", "Bar", "Zona Cocktails", "un"),
+    ("Mercado", "Gelo picado", "Bar", "Zona Cocktails", "kg"),
+    ("Mercado", "Gelo cubo", "Bar", "Zona Cocktails", "kg"),
+    ("Mercado", "Canela", "Bar", "Zona Cocktails", "un"),
+    ("Mercado", "Palinhas altas", "Bar", "Zona Cocktails", "un"),
+    ("A ti Marquinhas (Docaria)", "Tarte de Maca", "Sobremesas", "Zona Sobremesas", "un"),
+    ("A ti Marquinhas (Docaria)", "Tarte de Alfarroba e Laranja", "Sobremesas", "Zona Sobremesas", "un"),
+    ("A ti Marquinhas (Docaria)", "Cheesecake de frutos silvestres", "Sobremesas", "Zona Sobremesas", "un"),
+    ("A ti Marquinhas (Docaria)", "Banoffee", "Sobremesas", "Zona Sobremesas", "un"),
+    ("A ti Marquinhas (Docaria)", "Tarte de brigadeiro", "Sobremesas", "Zona Sobremesas", "un"),
+    ("A ti Marquinhas (Docaria)", "Tarte de batata doce", "Sobremesas", "Zona Sobremesas", "un"),
+    ("Mercado", "Chantilly", "Sobremesas", "Zona Sobremesas", "un"),
+    ("Mercado", "Morangos", "Sobremesas", "Zona Sobremesas", "kg"),
+    ("Mercado", "Chocolate em po", "Sobremesas", "Zona Sobremesas", "kg"),
+    ("Mercado", "Cacau em po", "Sobremesas", "Zona Sobremesas", "kg"),
+    ("Mercado", "Acucar de confeiteiro", "Sobremesas", "Zona Sobremesas", "kg"),
+    ("Ola", "Topping Chocolate", "Sobremesas", "Zona Sobremesas", "un"),
+    ("Ola", "Topping Morango", "Sobremesas", "Zona Sobremesas", "un"),
+    ("Ola", "Topping Caramelo", "Sobremesas", "Zona Sobremesas", "un"),
+    ("Ola", "Gelado Morango", "Sobremesas", "Zona Sobremesas", "un"),
+    ("Ola", "Gelado Baunilha", "Sobremesas", "Zona Sobremesas", "un"),
+    ("Ola", "Gelado Caramelo", "Sobremesas", "Zona Sobremesas", "un"),
+    ("Ola", "Gelado Sorbet Limao", "Sobremesas", "Zona Sobremesas", "un"),
+    ("Ola", "Gelado Chocolate", "Sobremesas", "Zona Sobremesas", "un"),
+    ("Ola", "Magnum Pessego", "Sobremesas", "Zona Sobremesas", "un"),
+    ("Ola", "Magnum Pistachio", "Sobremesas", "Zona Sobremesas", "un"),
+    ("Ola", "Magnum Amendoas", "Sobremesas", "Zona Sobremesas", "un"),
+    ("Ola", "Double Gold Billionaire", "Sobremesas", "Zona Sobremesas", "un"),
+    ("Ola", "Magnum Sandwich", "Sobremesas", "Zona Sobremesas", "un"),
+    ("Ola", "Caramel & Nuts", "Sobremesas", "Zona Sobremesas", "un"),
+    ("Ola", "Magnum Chocolate Branco", "Sobremesas", "Zona Sobremesas", "un"),
+    ("Ola", "Cornetto Pistachio", "Sobremesas", "Zona Sobremesas", "un"),
+    ("Ola", "Cornetto Tropical Manga", "Sobremesas", "Zona Sobremesas", "un"),
+    ("Ola", "Cornetto Chocnball", "Sobremesas", "Zona Sobremesas", "un"),
+    ("Ola", "Cornetto Morango", "Sobremesas", "Zona Sobremesas", "un"),
+    ("Ola", "Cornetto Brigadeiro", "Sobremesas", "Zona Sobremesas", "un"),
+    ("Ola", "Cornetto Classico", "Sobremesas", "Zona Sobremesas", "un"),
+    ("Ola", "Remix cpploe", "Sobremesas", "Zona Sobremesas", "un"),
+    ("Ola", "Volcanny", "Sobremesas", "Zona Sobremesas", "un"),
+    ("Ola", "Filipinos", "Sobremesas", "Zona Sobremesas", "un"),
+    ("Ola", "Rol", "Sobremesas", "Zona Sobremesas", "un"),
+    ("Ola", "Perna de Pau", "Sobremesas", "Zona Sobremesas", "un"),
+    ("Ola", "Cone Perna de Pau", "Sobremesas", "Zona Sobremesas", "un"),
+    ("Ola", "Twister", "Sobremesas", "Zona Sobremesas", "un"),
+    ("Ola", "Calippo Morango", "Sobremesas", "Zona Sobremesas", "un"),
+    ("Ola", "Calippo Limao", "Sobremesas", "Zona Sobremesas", "un"),
+    ("Ola", "Solero Exotico", "Sobremesas", "Zona Sobremesas", "un"),
+    ("Ola", "Solero Morango e lima", "Sobremesas", "Zona Sobremesas", "un"),
+    ("Ola", "Picolero", "Sobremesas", "Zona Sobremesas", "un"),
+    ("Ola", "Fizz", "Sobremesas", "Zona Sobremesas", "un"),
+    ("Ola", "Haribo push up", "Sobremesas", "Zona Sobremesas", "un"),
+    ("Aviludo", "Canela", "Sobremesas", "Zona Sobremesas", "un"),
+    ("Aviludo", "Manteiga mimosa pequena", "Bar", "Diversos Bar", "un"),
+    ("Aviludo", "Pate de Sardinha Uli", "Bar", "Diversos Bar", "un"),
+    ("Aviludo", "Azeite Extra Virgem Maduro Oliveira da Serra", "Bar", "Diversos Bar", "un"),
+    ("Aviludo", "Vinagre Vinho Branco Oliveira da Serra", "Bar", "Diversos Bar", "un"),
+    ("Aviludo", "Ketchup Sache Heinz", "Bar", "Diversos Bar", "un"),
+    ("Aviludo", "Maionese Sache Heinz", "Bar", "Diversos Bar", "un"),
+    ("Aviludo", "Mostarda Sache Heinz", "Bar", "Diversos Bar", "un"),
+    ("Delta", "Cafe Gold", "Cafetaria", "Zona Cafetaria", "kg"),
+    ("Delta", "Acucar", "Cafetaria", "Zona Cafetaria", "kg"),
+    ("Delta", "Adocante", "Cafetaria", "Zona Cafetaria", "un"),
+]
+
 
 STOCK = [
     ("Rolo de cozinha", "un", 8, 4),
@@ -136,13 +240,17 @@ def seed_db(reset=False, db_path=DB_PATH):
     else:
         migrate_db(conn)
 
-    suppliers_existing = conn.execute("SELECT COUNT(*) AS c FROM suppliers").fetchone()["c"]
-    if suppliers_existing == 0:
-        for name, phone, email, notes in SUPPLIERS:
-            conn.execute(
-                "INSERT INTO suppliers (name, phone, email, notes) VALUES (?, ?, ?, ?)",
-                (name, phone, email, notes),
-            )
+    existing_supplier_names = {
+        row["name"].strip().lower() for row in conn.execute("SELECT name FROM suppliers").fetchall()
+    }
+    for name, phone, email, notes in SUPPLIERS:
+        if name.strip().lower() in existing_supplier_names:
+            continue
+        conn.execute(
+            "INSERT INTO suppliers (name, phone, email, notes) VALUES (?, ?, ?, ?)",
+            (name, phone, email, notes),
+        )
+        existing_supplier_names.add(name.strip().lower())
 
     supplier_map = {
         row["name"]: row["id"]
@@ -160,27 +268,41 @@ def seed_db(reset=False, db_path=DB_PATH):
                 (supplier_map.get(supplier_name), name, item_type, item_subtype, unit),
             )
 
-    # Ensure Mercado catalog exists even on non-empty databases.
-    mercado_id = supplier_map.get("Mercado")
-    if mercado_id:
-        existing_market_names = {
-            row["name"].strip().lower()
-            for row in conn.execute(
-                "SELECT name FROM items WHERE supplier_id = ?",
-                (mercado_id,),
-            ).fetchall()
-        }
-        for name, item_type, item_subtype, unit in MARKET_CATALOG:
-            key = name.strip().lower()
-            if key in existing_market_names:
-                continue
-            conn.execute(
-                """
-                INSERT INTO items (supplier_id, name, item_type, item_subtype, unit, active)
-                VALUES (?, ?, ?, ?, ?, 1)
-                """,
-                (mercado_id, name, item_type, item_subtype, unit),
-            )
+    # Ensure requested catalog items exist even on non-empty databases.
+    existing_item_keys = {
+        (
+            row["supplier_id"],
+            row["name"].strip().lower(),
+            row["item_type"].strip().lower(),
+            row["item_subtype"].strip().lower(),
+            row["unit"].strip().lower(),
+        )
+        for row in conn.execute(
+            "SELECT supplier_id, name, item_type, item_subtype, unit FROM items"
+        ).fetchall()
+    }
+    requested_rows = [("Mercado", *row) for row in MARKET_CATALOG] + REQUESTED_CATALOG
+    for supplier_name, name, item_type, item_subtype, unit in requested_rows:
+        supplier_id = supplier_map.get(supplier_name)
+        if not supplier_id:
+            continue
+        key = (
+            supplier_id,
+            name.strip().lower(),
+            item_type.strip().lower(),
+            item_subtype.strip().lower(),
+            unit.strip().lower(),
+        )
+        if key in existing_item_keys:
+            continue
+        conn.execute(
+            """
+            INSERT INTO items (supplier_id, name, item_type, item_subtype, unit, active)
+            VALUES (?, ?, ?, ?, ?, 1)
+            """,
+            (supplier_id, name, item_type, item_subtype, unit),
+        )
+        existing_item_keys.add(key)
 
     stock_existing = conn.execute("SELECT COUNT(*) AS c FROM stock_items").fetchone()["c"]
     if stock_existing == 0:
