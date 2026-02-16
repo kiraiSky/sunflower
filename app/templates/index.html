@@ -1,5 +1,9 @@
 {% extends "base.html" %}
 {% block content %}
+  {% set notices_new_count = notices_new_count|default(0) %}
+  {% set notices = notices|default([]) %}
+  {% set can_add_notices = can_add_notices|default(false) %}
+  {% set can_manage_notices = can_manage_notices|default(false) %}
   <div class="home-layout layout-3">
     <section class="home-block span-2 hero">
       <div>
