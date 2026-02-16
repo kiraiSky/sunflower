@@ -18,9 +18,9 @@
       <button class="primary" type="submit" data-sound="save">Adicionar selecionados</button>
     </form>
 
-    <h3>Filtragem rapida</h3>
+    <h3>Filtragem rápida</h3>
     <div class="form grid-form">
-      <label class="full">
+      <label class="full" for="order-filter-search">
         Pesquisa
         <input type="search" id="order-filter-search" placeholder="Item, fornecedor, categoria ou zona" />
       </label>
@@ -156,6 +156,7 @@
     };
     const uniqueTypes = [...new Set(orderItems.map((item) => item[3]).filter(Boolean))].sort();
     const uniqueSubtypes = [...new Set(orderItems.map((item) => item[4]).filter(Boolean))].sort();
+    const SEARCH_DEBOUNCE_MS = 250;
 
     const renderCards = () => {
       if (!results) return;
@@ -313,7 +314,7 @@
     let filterSearchTimer = null;
     filterSearch?.addEventListener("input", () => {
       window.clearTimeout(filterSearchTimer);
-      filterSearchTimer = window.setTimeout(renderCards, 250);
+      filterSearchTimer = window.setTimeout(renderCards, SEARCH_DEBOUNCE_MS);
     });
 
     document.getElementById("order-compose")?.addEventListener("submit", (e) => {
