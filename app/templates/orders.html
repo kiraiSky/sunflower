@@ -18,8 +18,12 @@
       <button class="primary" type="submit" data-sound="save">Adicionar selecionados</button>
     </form>
 
-    <h3>Filtro por categoria e zona</h3>
-    <div class="form">
+    <h3>Filtragem rápida</h3>
+    <div class="form grid-form">
+      <label class="full" for="order-filter-search">
+        Pesquisa
+        <input type="search" id="order-filter-search" placeholder="Item, fornecedor, categoria ou zona" aria-label="Pesquisar por item, fornecedor, categoria ou zona" />
+      </label>
       <label>
         Categoria
         <select id="order-filter-type">
@@ -32,8 +36,10 @@
           <option value="">Todas</option>
         </select>
       </label>
+      <div class="full quick-picks" id="order-filter-type-pills"></div>
+      <div class="full quick-picks" id="order-filter-subtype-pills"></div>
     </div>
-    <p class="help-text">Escolha categoria e/ou zona para listar os itens correspondentes.</p>
+    <p class="help-text">Pesquise e use os atalhos por categoria/zona para listar os itens correspondentes.</p>
     <div class="order-card-grid" id="order-item-results"></div>
   </section>
 
@@ -79,8 +85,11 @@
     const selectedItemsHidden = document.getElementById("selected-items-hidden");
     const results = document.getElementById("order-item-results");
     const orderedAtHidden = document.getElementById("ordered-at-hidden");
+    const filterSearch = document.getElementById("order-filter-search");
     const filterType = document.getElementById("order-filter-type");
     const filterSubtype = document.getElementById("order-filter-subtype");
+    const filterTypePills = document.getElementById("order-filter-type-pills");
+    const filterSubtypePills = document.getElementById("order-filter-subtype-pills");
     const pendingViewToggle = document.getElementById("pending-view-toggle");
     const pendingSimpleView = document.getElementById("pending-simple-view");
     const pendingDetailView = document.getElementById("pending-detail-view");
@@ -145,17 +154,29 @@
       const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
       return Math.max(0, Math.floor((today.getTime() - target.getTime()) / 86400000));
     };
+    const uniqueTypes = [...new Set(orderItems.map((item) => item[3]).filter(Boolean))].sort();
+    const uniqueSubtypes = [...new Set(orderItems.map((item) => item[4]).filter(Boolean))].sort();
+    const SEARCH_DEBOUNCE_MS = 250;
 
     const renderCards = () => {
       if (!results) return;
       const selectedType = normalizeKey(filterType?.value || "");
       const selectedSubtype = normalizeKey(filterSubtype?.value || "");
+      const selectedSearch = normalizeKey(filterSearch?.value || "");
       const filtered = orderItems.filter((item) => {
         const itemType = normalizeKey(item[3]);
         const itemSubtype = normalizeKey(item[4]);
+        const itemName = normalizeKey(item[1]);
+        const itemSupplier = normalizeKey(item[2]);
         const typeMatch = !selectedType || itemType === selectedType;
         const subtypeMatch = !selectedSubtype || itemSubtype === selectedSubtype;
-        return typeMatch && subtypeMatch;
+        const searchMatch =
+          !selectedSearch ||
+          itemName.includes(selectedSearch) ||
+          itemSupplier.includes(selectedSearch) ||
+          itemType.includes(selectedSearch) ||
+          itemSubtype.includes(selectedSearch);
+        return typeMatch && subtypeMatch && searchMatch;
       });
 
       if (!filtered.length) {
@@ -233,11 +254,22 @@
       });
     };
 
-    const buildFilterOptions = () => {
-      const uniqueTypes = [...new Set(orderItems.map((item) => item[3]).filter(Boolean))].sort();
-      const uniqueSubtypes = [...new Set(orderItems.map((item) => item[4]).filter(Boolean))].sort();
+    const buildFilterPills = (host, values, selected, onPick) => {
+      if (!host) return;
+      host.textContent = "";
+      [{ label: "Todas", value: "" }, ...values.map((value) => ({ label: value, value }))].forEach((entry) => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = `pill ${entry.value === selected ? "ok" : "toggle"}`;
+        btn.textContent = entry.label;
+        btn.addEventListener("click", () => onPick(entry.value));
+        host.appendChild(btn);
+      });
+    };
 
+    const buildFilterOptions = () => {
       if (filterType) {
+        filterType.innerHTML = '<option value="">Todas</option>';
         uniqueTypes.forEach((value) => {
           const option = document.createElement("option");
           option.value = value;
@@ -246,6 +278,7 @@
         });
       }
       if (filterSubtype) {
+        filterSubtype.innerHTML = '<option value="">Todas</option>';
         uniqueSubtypes.forEach((value) => {
           const option = document.createElement("option");
           option.value = value;
@@ -255,8 +288,34 @@
       }
     };
 
-    filterType?.addEventListener("change", renderCards);
-    filterSubtype?.addEventListener("change", renderCards);
+    const renderFilterPills = () => {
+      buildFilterPills(filterTypePills, uniqueTypes, filterType?.value || "", (value) => {
+        if (!filterType) return;
+        filterType.value = value;
+        renderCards();
+        renderFilterPills();
+      });
+      buildFilterPills(filterSubtypePills, uniqueSubtypes, filterSubtype?.value || "", (value) => {
+        if (!filterSubtype) return;
+        filterSubtype.value = value;
+        renderCards();
+        renderFilterPills();
+      });
+    };
+
+    filterType?.addEventListener("change", () => {
+      renderCards();
+      renderFilterPills();
+    });
+    filterSubtype?.addEventListener("change", () => {
+      renderCards();
+      renderFilterPills();
+    });
+    let filterSearchTimer = null;
+    filterSearch?.addEventListener("input", () => {
+      window.clearTimeout(filterSearchTimer);
+      filterSearchTimer = window.setTimeout(renderCards, SEARCH_DEBOUNCE_MS);
+    });
 
     document.getElementById("order-compose")?.addEventListener("submit", (e) => {
       if (orderedAtHidden) orderedAtHidden.value = getDeviceDateISO();
@@ -324,6 +383,7 @@
 
     if (orderedAtHidden) orderedAtHidden.value = getDeviceDateISO();
     buildFilterOptions();
+    renderFilterPills();
     renderCards();
   </script>
 {% endblock %}
