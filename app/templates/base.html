@@ -54,7 +54,7 @@
           <a href="{{ url_for('orders') }}" class="{% if request.endpoint == 'orders' or request.endpoint == 'orders_manage' %}active{% endif %}">
             <i class="fa-solid fa-box-open" aria-hidden="true"></i><span>Encomendas</span>
           </a>
-          <a href="{{ url_for('todo') }}" class="{% if request.endpoint == 'todo' %}active{% endif %}">
+          <a href="{{ url_for('todo') }}" class="{% if request.endpoint in ['todo', 'todo_catalog'] %}active{% endif %}">
             <i class="fa-solid fa-list-check" aria-hidden="true"></i><span>To-Do</span>
           </a>
           <a href="{{ url_for('market') }}" class="{% if request.endpoint == 'market' %}active{% endif %}">

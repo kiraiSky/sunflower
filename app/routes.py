@@ -306,10 +306,10 @@ def register_routes(app):
 
             if not district:
                 flash("Informe o nome da zona/distrito.", "error")
-                return redirect(url_for("todo", area=selected_area))
+                return redirect(url_for("todo_catalog", area=selected_area))
             if not item_names:
                 flash("Selecione pelo menos um item para a zona.", "error")
-                return redirect(url_for("todo", area=selected_area))
+                return redirect(url_for("todo_catalog", area=selected_area))
 
             conn.execute(
                 "DELETE FROM todo_catalog WHERE area = ? AND district = ?",
@@ -325,7 +325,7 @@ def register_routes(app):
                 )
 
         flash("Zona do checklist guardada.", "ok")
-        return redirect(url_for("todo", area=selected_area))
+        return redirect(url_for("todo_catalog", area=selected_area))
 
     @app.route("/todo/catalog/delete", methods=["POST"])
     def todo_catalog_delete():
@@ -343,7 +343,7 @@ def register_routes(app):
             district = normalize_text(request.form.get("district", ""))
             if not district:
                 flash("Zona invalida.", "error")
-                return redirect(url_for("todo", area=selected_area))
+                return redirect(url_for("todo_catalog", area=selected_area))
 
             conn.execute(
                 "DELETE FROM todo_catalog WHERE area = ? AND district = ?",
@@ -351,7 +351,55 @@ def register_routes(app):
             )
 
         flash("Zona removida do checklist.", "ok")
-        return redirect(url_for("todo", area=selected_area))
+        return redirect(url_for("todo_catalog", area=selected_area))
+
+    @app.route("/todo/catalog")
+    def todo_catalog():
+        if (redir := login_required()) is not None:
+            return redir
+        if (redir := manager_required()) is not None:
+            return redir
+
+        with get_db(app) as conn:
+            area_labels = get_todo_area_labels(conn)
+            default_area = next(iter(area_labels), "bar")
+            selected_area = normalize_text(request.args.get("area", default_area)).lower()
+            if selected_area not in area_labels:
+                selected_area = default_area
+
+            catalog_rows = conn.execute(
+                """
+                SELECT district, item_name
+                FROM todo_catalog
+                WHERE active = 1 AND area = ?
+                ORDER BY district, sort_order, item_name
+                """,
+                (selected_area,),
+            ).fetchall()
+            available_item_rows = conn.execute(
+                """
+                SELECT DISTINCT name
+                FROM items
+                WHERE active = 1 AND TRIM(name) <> ''
+                ORDER BY name
+                """
+            ).fetchall()
+
+        districts = {}
+        for district, item_name in catalog_rows:
+            districts.setdefault(district, []).append(item_name)
+        catalog_manage_map = {district: sorted(names) for district, names in districts.items()}
+        available_item_names = [row[0] for row in available_item_rows]
+
+        return render_template(
+            "todo_catalog.html",
+            user=current_user(),
+            area_labels=area_labels,
+            selected_area=selected_area,
+            districts=list(districts.items()),
+            catalog_manage_map=catalog_manage_map,
+            available_item_names=available_item_names,
+        )
 
     @app.route("/todo", methods=["GET", "POST"])
     def todo():
@@ -452,14 +500,6 @@ def register_routes(app):
                 """,
                 (selected_area,),
             ).fetchall()
-            available_item_rows = conn.execute(
-                """
-                SELECT DISTINCT name
-                FROM items
-                WHERE active = 1 AND TRIM(name) <> ''
-                ORDER BY name
-                """
-            ).fetchall()
 
             check_row = conn.execute(
                 "SELECT id FROM todo_checks WHERE check_date = ? AND area = ?",
@@ -511,8 +551,6 @@ def register_routes(app):
         districts = {}
         for district, item_name in catalog_rows:
             districts.setdefault(district, []).append(item_name)
-        catalog_manage_map = {district: sorted(names) for district, names in districts.items()}
-        available_item_names = [row[0] for row in available_item_rows]
         role = (session.get("role") or "").strip().lower()
         can_manage_todo_catalog = role in {"admin", "manager", "gestor"}
 
@@ -550,8 +588,6 @@ def register_routes(app):
             is_today=is_today,
             history_dates=history_dates,
             can_manage_todo_catalog=can_manage_todo_catalog,
-            catalog_manage_map=catalog_manage_map,
-            available_item_names=available_item_names,
         )
 
     @app.route("/todo/order-review", methods=["GET", "POST"])
