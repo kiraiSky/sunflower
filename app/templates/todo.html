@@ -17,47 +17,54 @@
       {% endfor %}
     </div>
     {% if can_manage_todo_catalog %}
-    <details class="filter-accordion">
+    <details class="filter-accordion todo-catalog-accordion">
       <summary>
         <span>Gestor do checklist</span>
-        <small>Zonas e itens</small>
+        <small id="todo-manage-selected-count">0 itens</small>
       </summary>
-      <form method="post" action="{{ url_for('todo_catalog_manage') }}" class="form grid-form" id="todo-catalog-manage-form">
-        <input type="hidden" name="area" value="{{ selected_area }}" />
-        <label>
-          Zona/Distrito
-          <input type="text" name="district" id="todo-manage-district" required placeholder="Ex.: Balcao" />
-        </label>
-        <label>
-          Editar zona existente
-          <select id="todo-manage-district-preset">
-            <option value="">Nova zona</option>
-            {% for district_name, _entries in districts %}
-            <option value="{{ district_name }}">{{ district_name }}</option>
-            {% endfor %}
-          </select>
-        </label>
-        <label class="full">
-          Procurar item
-          <input type="search" id="todo-manage-search" placeholder="Filtrar itens..." />
-        </label>
-        <div class="full todo-item-grid" id="todo-manage-item-grid">
-          {% for item_name in available_item_names %}
-          <label class="todo-item-option">
-            <input type="checkbox" name="item_names" value="{{ item_name }}" data-manage-item />
-            <span>{{ item_name }}</span>
-          </label>
-          {% endfor %}
-        </div>
-        <div class="full step-actions">
-          <button class="primary" type="submit" data-sound="save">Guardar zona</button>
-        </div>
-      </form>
-      <form method="post" action="{{ url_for('todo_catalog_delete') }}" class="form grid-form" id="todo-catalog-delete-form">
-        <input type="hidden" name="area" value="{{ selected_area }}" />
-        <input type="hidden" name="district" id="todo-delete-district" />
-        <button class="pill warn hidden" type="submit" id="todo-delete-district-btn">Remover zona selecionada</button>
-      </form>
+      <div class="todo-catalog-manager">
+        <form method="post" action="{{ url_for('todo_catalog_manage') }}" class="form" id="todo-catalog-manage-form">
+          <input type="hidden" name="area" value="{{ selected_area }}" />
+          <div class="todo-catalog-toolbar">
+            <label>
+              Editar zona
+              <select id="todo-manage-district-preset">
+                <option value="">Nova zona</option>
+                {% for district_name, _entries in districts %}
+                <option value="{{ district_name }}">{{ district_name }}</option>
+                {% endfor %}
+              </select>
+            </label>
+            <label>
+              Zona/Distrito
+              <input type="text" name="district" id="todo-manage-district" required placeholder="Ex.: Balcao" />
+            </label>
+            <label>
+              Procurar item
+              <input type="search" id="todo-manage-search" placeholder="Filtrar itens..." />
+            </label>
+          </div>
+          <div class="todo-catalog-items">
+            <div class="todo-item-grid" id="todo-manage-item-grid">
+              {% for item_name in available_item_names %}
+              <label class="todo-item-option">
+                <input type="checkbox" name="item_names" value="{{ item_name }}" data-manage-item />
+                <span>{{ item_name }}</span>
+              </label>
+              {% endfor %}
+            </div>
+          </div>
+          <div class="step-actions">
+            <button class="primary" type="submit" data-sound="save">Guardar zona</button>
+            <button class="pill warn hidden" type="button" id="todo-delete-district-btn">Remover zona selecionada</button>
+          </div>
+        </form>
+        <form method="post" action="{{ url_for('todo_catalog_delete') }}" class="hidden" id="todo-catalog-delete-form">
+          <input type="hidden" name="area" value="{{ selected_area }}" />
+          <input type="hidden" name="district" id="todo-delete-district" />
+          <button type="submit" id="todo-delete-submit"></button>
+        </form>
+      </div>
     </details>
     {% endif %}
   </section>
@@ -217,16 +224,21 @@
       const districtInput = document.getElementById("todo-manage-district");
       const deleteInput = document.getElementById("todo-delete-district");
       const deleteBtn = document.getElementById("todo-delete-district-btn");
+      const deleteSubmit = document.getElementById("todo-delete-submit");
+      const selectedCount = document.getElementById("todo-manage-selected-count");
       const search = document.getElementById("todo-manage-search");
       const options = Array.from(document.querySelectorAll("[data-manage-item]"));
       if (!preset || !districtInput || options.length === 0) return;
 
       const syncOptionStyles = () => {
+        let count = 0;
         options.forEach((input) => {
           const wrap = input.closest(".todo-item-option");
           if (!wrap) return;
           wrap.classList.toggle("selected", input.checked);
+          if (input.checked) count += 1;
         });
+        if (selectedCount) selectedCount.textContent = `${count} item(ns)`;
       };
 
       const applyDistrict = (district) => {
@@ -262,6 +274,7 @@
       });
 
       options.forEach((input) => input.addEventListener("change", syncOptionStyles));
+      deleteBtn?.addEventListener("click", () => deleteSubmit?.click());
       syncOptionStyles();
     })();
   </script>

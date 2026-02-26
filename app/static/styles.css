@@ -766,6 +766,36 @@ button {
   gap: 8px;
 }
 
+.todo-catalog-accordion {
+  margin-top: 8px;
+}
+
+.todo-catalog-accordion summary small {
+  max-width: none;
+}
+
+.todo-catalog-manager {
+  border-top: 1px solid var(--line);
+  padding: 12px;
+  display: grid;
+  gap: 12px;
+}
+
+.todo-catalog-toolbar {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.todo-catalog-items {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #fafafa;
+  padding: 10px;
+  max-height: 320px;
+  overflow: auto;
+}
+
 .todo-report-card {
   border: 1px solid var(--line);
   border-radius: 12px;
@@ -1475,6 +1505,10 @@ button.primary:active,
   .pending-order-actions {
     grid-template-columns: 1fr;
     align-items: stretch;
+  }
+
+  .todo-catalog-toolbar {
+    grid-template-columns: 1fr;
   }
 
   .responsive-table .table-head {
