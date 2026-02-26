@@ -3,7 +3,6 @@
   <section class="page-header">
     <div>
       <h1>Encomendas</h1>
-      <p>Uma lista pendente unica, sem duplicacao por equipas.</p>
     </div>
     <div>
       <a class="pill toggle" href="{{ url_for('orders_manage') }}" data-sound="next">Gestao por fornecedor</a>
@@ -17,82 +16,40 @@
       <input type="hidden" name="ordered_at" id="ordered-at-hidden" />
       <button class="primary" type="submit" data-sound="save">Adicionar selecionados</button>
     </form>
-
-    <h3>Filtragem rápida</h3>
-    <div class="form grid-form">
-      <label class="full" for="order-filter-search">
-        Pesquisa
-        <input type="search" id="order-filter-search" placeholder="Item, fornecedor, categoria ou zona" aria-label="Pesquisar por item, fornecedor, categoria ou zona" />
-      </label>
-      <label>
-        Categoria
-        <select id="order-filter-type">
-          <option value="">Todas</option>
-        </select>
-      </label>
-      <label>
-        Zona
-        <select id="order-filter-subtype">
-          <option value="">Todas</option>
-        </select>
-      </label>
-      <div class="full quick-picks" id="order-filter-type-pills"></div>
-      <div class="full quick-picks" id="order-filter-subtype-pills"></div>
+    <div id="order-guided-mode">
+      <div class="form grid-form">
+        <label class="full" for="order-filter-search">
+          Pesquisa
+          <input type="search" id="order-filter-search" placeholder="Pesquisar item" aria-label="Pesquisar item" />
+        </label>
+        <div class="full">
+          <label>Fornecedor</label>
+          <div class="todo-area-tabs" id="order-filter-guided-supplier-pills"></div>
+        </div>
+        <div class="full">
+          <label>Zona</label>
+          <div class="quick-picks" id="order-filter-guided-zone-pills"></div>
+        </div>
+      </div>
     </div>
-    <p class="help-text">Pesquise e use os atalhos por categoria/zona para listar os itens correspondentes.</p>
     <div class="order-card-grid" id="order-item-results"></div>
   </section>
 
   <section class="panel">
-    <div class="pending-list-header">
-      <h2>Lista pendente</h2>
-      <button type="button" class="pill toggle" id="pending-view-toggle">Vista detalhada</button>
-    </div>
-
-    <div class="pending-card-grid" id="pending-simple-view">
-      {% for o in orders %}
-      <article class="pending-order-card" data-ordered-at="{{ o[4] }}">
-        <h4>{{ o[2] }}</h4>
-        <small data-pending-relative></small>
-      </article>
-      {% else %}
-      <div class="table-row empty">Nenhum item pendente.</div>
-      {% endfor %}
-    </div>
-
-    <div class="table responsive-table hidden" id="pending-detail-view">
-      <div class="table-row table-head">
-        <div>Item</div>
-        <div>Fornecedor</div>
-        <div>Quantidade</div>
-        <div>Atualizado em</div>
-      </div>
-      {% for o in orders %}
-      <div class="table-row">
-        <div data-label="Item">{{ o[2] }}</div>
-        <div data-label="Fornecedor">{{ o[1] }}</div>
-        <div data-label="Quantidade">{{ "%.2f"|format(o[3]) }}</div>
-        <div data-label="Atualizado em">{{ o[4] }}</div>
-      </div>
-      {% else %}
-      <div class="table-row empty">Nenhum item pendente.</div>
-      {% endfor %}
-    </div>
+    <h2>Lista pendente</h2>
+    <div class="table responsive-table" id="pending-by-supplier"></div>
   </section>
 
   <script>
     const orderItems = {{ items|tojson }};
+    let pendingOrders = {{ orders|tojson }};
     const selectedItemsHidden = document.getElementById("selected-items-hidden");
     const results = document.getElementById("order-item-results");
     const orderedAtHidden = document.getElementById("ordered-at-hidden");
     const filterSearch = document.getElementById("order-filter-search");
-    const filterType = document.getElementById("order-filter-type");
-    const filterSubtype = document.getElementById("order-filter-subtype");
-    const filterTypePills = document.getElementById("order-filter-type-pills");
-    const filterSubtypePills = document.getElementById("order-filter-subtype-pills");
-    const pendingViewToggle = document.getElementById("pending-view-toggle");
-    const pendingSimpleView = document.getElementById("pending-simple-view");
-    const pendingDetailView = document.getElementById("pending-detail-view");
+    const guidedSupplierPills = document.getElementById("order-filter-guided-supplier-pills");
+    const guidedZonePills = document.getElementById("order-filter-guided-zone-pills");
+    const pendingBySupplier = document.getElementById("pending-by-supplier");
 
     const getDeviceDateISO = () => {
       const d = new Date();
@@ -138,6 +95,12 @@
       if (diffDays < 60) return "ha 1 mes";
       return `ha ${Math.floor(diffDays / 30)} meses`;
     };
+    const formatQtyDisplay = (value) => {
+      const num = Number(value);
+      if (!Number.isFinite(num)) return String(value ?? "");
+      if (Number.isInteger(num)) return String(num);
+      return num.toFixed(2).replace(/\.?0+$/, "");
+    };
 
     const selectedItems = new Map();
     const itemById = new Map(orderItems.map((item) => [Number(item[0]), item]));
@@ -154,29 +117,42 @@
       const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
       return Math.max(0, Math.floor((today.getTime() - target.getTime()) / 86400000));
     };
-    const uniqueTypes = [...new Set(orderItems.map((item) => item[3]).filter(Boolean))].sort();
-    const uniqueSubtypes = [...new Set(orderItems.map((item) => item[4]).filter(Boolean))].sort();
+    const uniqueTypes = [...new Set(orderItems.map((item) => item[2]).filter(Boolean))].sort();
     const SEARCH_DEBOUNCE_MS = 250;
+    const zoneOptionsBySupplier = new Map(
+      uniqueTypes.map((supplier) => [
+        supplier,
+        [...new Set(orderItems.filter((item) => item[2] === supplier).map((item) => item[4]).filter(Boolean))].sort(),
+      ])
+    );
+    const filterState = {
+      guidedSupplier: "",
+      guidedZone: "",
+    };
 
     const renderCards = () => {
       if (!results) return;
-      const selectedType = normalizeKey(filterType?.value || "");
-      const selectedSubtype = normalizeKey(filterSubtype?.value || "");
+      const selectedGuidedSupplier = normalizeKey(filterState.guidedSupplier);
+      const selectedGuidedZone = normalizeKey(filterState.guidedZone);
       const selectedSearch = normalizeKey(filterSearch?.value || "");
+
+      if (!selectedGuidedSupplier) {
+        results.innerHTML = '<div class="table-row empty">Selecione um fornecedor para continuar.</div>';
+        return;
+      }
+
       const filtered = orderItems.filter((item) => {
-        const itemType = normalizeKey(item[3]);
-        const itemSubtype = normalizeKey(item[4]);
         const itemName = normalizeKey(item[1]);
+        const itemSubtype = normalizeKey(item[4]);
         const itemSupplier = normalizeKey(item[2]);
-        const typeMatch = !selectedType || itemType === selectedType;
-        const subtypeMatch = !selectedSubtype || itemSubtype === selectedSubtype;
+        const guidedSupplierMatch = !selectedGuidedSupplier || itemSupplier === selectedGuidedSupplier;
+        const guidedZoneMatch = !selectedGuidedZone || itemSubtype === selectedGuidedZone;
         const searchMatch =
           !selectedSearch ||
           itemName.includes(selectedSearch) ||
           itemSupplier.includes(selectedSearch) ||
-          itemType.includes(selectedSearch) ||
           itemSubtype.includes(selectedSearch);
-        return typeMatch && subtypeMatch && searchMatch;
+        return guidedSupplierMatch && guidedZoneMatch && searchMatch;
       });
 
       if (!filtered.length) {
@@ -267,50 +243,20 @@
       });
     };
 
-    const buildFilterOptions = () => {
-      if (filterType) {
-        filterType.innerHTML = '<option value="">Todas</option>';
-        uniqueTypes.forEach((value) => {
-          const option = document.createElement("option");
-          option.value = value;
-          option.textContent = value;
-          filterType.appendChild(option);
-        });
-      }
-      if (filterSubtype) {
-        filterSubtype.innerHTML = '<option value="">Todas</option>';
-        uniqueSubtypes.forEach((value) => {
-          const option = document.createElement("option");
-          option.value = value;
-          option.textContent = value;
-          filterSubtype.appendChild(option);
-        });
-      }
-    };
-
-    const renderFilterPills = () => {
-      buildFilterPills(filterTypePills, uniqueTypes, filterType?.value || "", (value) => {
-        if (!filterType) return;
-        filterType.value = value;
+    const renderGuidedPills = () => {
+      buildFilterPills(guidedSupplierPills, uniqueTypes, filterState.guidedSupplier, (value) => {
+        filterState.guidedSupplier = value;
+        filterState.guidedZone = "";
+        renderGuidedPills();
         renderCards();
-        renderFilterPills();
       });
-      buildFilterPills(filterSubtypePills, uniqueSubtypes, filterSubtype?.value || "", (value) => {
-        if (!filterSubtype) return;
-        filterSubtype.value = value;
+      const supplierZones = zoneOptionsBySupplier.get(filterState.guidedSupplier) || [];
+      buildFilterPills(guidedZonePills, supplierZones, filterState.guidedZone, (value) => {
+        filterState.guidedZone = value;
+        renderGuidedPills();
         renderCards();
-        renderFilterPills();
       });
     };
-
-    filterType?.addEventListener("change", () => {
-      renderCards();
-      renderFilterPills();
-    });
-    filterSubtype?.addEventListener("change", () => {
-      renderCards();
-      renderFilterPills();
-    });
     let filterSearchTimer = null;
     filterSearch?.addEventListener("input", () => {
       window.clearTimeout(filterSearchTimer);
@@ -362,28 +308,98 @@
       }
     });
 
-    document.querySelectorAll("[data-pending-relative]").forEach((el) => {
-      const orderedAt = el.closest("[data-ordered-at]")?.dataset.orderedAt || "";
-      el.textContent = relativePendingDate(orderedAt);
-    });
+    const renderPendingBySupplier = () => {
+      if (!pendingBySupplier) return;
+      if (!pendingOrders.length) {
+        pendingBySupplier.innerHTML = '<div class="table-row empty">Nenhum item pendente.</div>';
+        return;
+      }
 
-    if (pendingViewToggle && pendingSimpleView && pendingDetailView) {
-      let isDetailedView = false;
-      const applyPendingView = () => {
-        pendingSimpleView.classList.toggle("hidden", isDetailedView);
-        pendingDetailView.classList.toggle("hidden", !isDetailedView);
-        pendingViewToggle.textContent = isDetailedView ? "Vista simples" : "Vista detalhada";
-      };
-      pendingViewToggle.addEventListener("click", () => {
-        isDetailedView = !isDetailedView;
-        applyPendingView();
+      const grouped = new Map();
+      pendingOrders.forEach((row) => {
+        const supplier = row[1] || "-";
+        if (!grouped.has(supplier)) grouped.set(supplier, []);
+        grouped.get(supplier).push(row);
       });
-      applyPendingView();
-    }
+
+      pendingBySupplier.innerHTML = "";
+      [...grouped.entries()].forEach(([supplier, rows]) => {
+        const group = document.createElement("details");
+        group.className = "filter-accordion pending-supplier-accordion";
+        group.open = true;
+
+        const summary = document.createElement("summary");
+        const title = document.createElement("span");
+        title.textContent = supplier;
+        const count = document.createElement("small");
+        count.textContent = `${rows.length} item(ns)`;
+        summary.appendChild(title);
+        summary.appendChild(count);
+        group.appendChild(summary);
+
+        const list = document.createElement("div");
+        list.className = "pending-card-grid";
+        rows.forEach((o) => {
+          const card = document.createElement("article");
+          card.className = "pending-order-card";
+          const orderId = Number(o[0]);
+          card.innerHTML = `
+            <h4>${o[2]}</h4>
+            <div class="pending-order-actions">
+              <label>
+                Quantidade
+                <input type="number" min="0.01" step="0.01" value="${Number(o[3])}" data-pending-qty="${orderId}" />
+              </label>
+              <button type="button" class="pill toggle" data-pending-save="${orderId}" aria-label="Guardar quantidade" title="Guardar quantidade">
+                <i class="fa-solid fa-floppy-disk" aria-hidden="true"></i>
+              </button>
+              <button type="button" class="pill warn" data-pending-remove="${orderId}" aria-label="Remover item" title="Remover item">
+                <i class="fa-solid fa-trash" aria-hidden="true"></i>
+              </button>
+            </div>
+            <small>${relativePendingDate(o[4])}</small>
+          `;
+          list.appendChild(card);
+        });
+        group.appendChild(list);
+        pendingBySupplier.appendChild(group);
+      });
+
+      pendingBySupplier.querySelectorAll("[data-pending-save]").forEach((btn) => {
+        btn.addEventListener("click", async () => {
+          const orderId = Number(btn.getAttribute("data-pending-save"));
+          const qtyField = pendingBySupplier.querySelector(`[data-pending-qty="${orderId}"]`);
+          const qty = Math.max(0.01, Number(qtyField?.value || "0"));
+          if (!Number.isFinite(qty) || qty <= 0) return;
+          const res = await fetch(`/orders/${orderId}/qty`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ qty }),
+          });
+          if (!res.ok) return;
+          const idx = pendingOrders.findIndex((x) => Number(x[0]) === orderId);
+          if (idx >= 0) pendingOrders[idx][3] = qty;
+          renderPendingBySupplier();
+        });
+      });
+
+      pendingBySupplier.querySelectorAll("[data-pending-remove]").forEach((btn) => {
+        btn.addEventListener("click", async () => {
+          const orderId = Number(btn.getAttribute("data-pending-remove"));
+          const res = await fetch(`/orders/${orderId}/remove`, { method: "POST" });
+          if (!res.ok) return;
+          pendingOrders = pendingOrders.filter((x) => Number(x[0]) !== orderId);
+          renderPendingBySupplier();
+        });
+      });
+    };
 
     if (orderedAtHidden) orderedAtHidden.value = getDeviceDateISO();
-    buildFilterOptions();
-    renderFilterPills();
+    renderGuidedPills();
     renderCards();
+    renderPendingBySupplier();
   </script>
 {% endblock %}
+
+
+

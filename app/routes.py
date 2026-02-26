@@ -1276,6 +1276,67 @@ def register_routes(app):
             orders=rows,
         )
 
+    @app.route("/orders/<int:order_id>/qty", methods=["POST"])
+    def orders_update_qty(order_id):
+        if (redir := login_required()) is not None:
+            return redir
+
+        payload = request.get_json(silent=True) or {}
+        try:
+            qty = float(payload.get("qty", 0))
+        except (TypeError, ValueError):
+            return jsonify({"ok": False, "error": "Quantidade invalida."}), 400
+        if qty <= 0:
+            return jsonify({"ok": False, "error": "Quantidade invalida."}), 400
+
+        with get_db(app) as conn:
+            row = conn.execute(
+                "SELECT id, item_id, status FROM orders WHERE id = ?",
+                (order_id,),
+            ).fetchone()
+            if not row or row[2] != "pending":
+                return jsonify({"ok": False, "error": "Item pendente nao encontrado."}), 404
+
+            conn.execute(
+                "UPDATE orders SET qty = ? WHERE id = ?",
+                (qty, order_id),
+            )
+            item_meta = conn.execute(
+                "SELECT COALESCE(unit, '') FROM items WHERE id = ?",
+                (row[1],),
+            ).fetchone()
+            unit = normalize_text(item_meta[0] if item_meta else "")
+            qty_text = f"{qty:.2f}".rstrip("0").rstrip(".")
+            if unit:
+                qty_text = f"{qty_text} {unit}"
+            conn.execute(
+                """
+                UPDATE market_list
+                SET qty = ?, qty_value = ?
+                WHERE order_id = ? AND checked = 0
+                """,
+                (qty_text, qty, order_id),
+            )
+        return jsonify({"ok": True, "qty": qty})
+
+    @app.route("/orders/<int:order_id>/remove", methods=["POST"])
+    def orders_remove(order_id):
+        if (redir := login_required()) is not None:
+            return redir
+
+        with get_db(app) as conn:
+            row = conn.execute(
+                "SELECT id, status FROM orders WHERE id = ?",
+                (order_id,),
+            ).fetchone()
+            if not row or row[1] != "pending":
+                return jsonify({"ok": False, "error": "Item pendente nao encontrado."}), 404
+
+            conn.execute("DELETE FROM market_list WHERE order_id = ?", (order_id,))
+            conn.execute("DELETE FROM orders WHERE id = ?", (order_id,))
+
+        return jsonify({"ok": True})
+
     @app.route("/orders/manage", methods=["GET", "POST"])
     def orders_manage():
         if (redir := login_required()) is not None:

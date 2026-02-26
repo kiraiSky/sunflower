@@ -51,17 +51,8 @@
           <a href="{{ url_for('index') }}" class="{% if request.endpoint == 'index' %}active{% endif %}">
             <i class="fa-solid fa-chart-line" aria-hidden="true"></i><span>Painel</span>
           </a>
-          <a href="{{ url_for('suppliers') }}" class="{% if request.endpoint == 'suppliers' %}active{% endif %}">
-            <i class="fa-solid fa-handshake" aria-hidden="true"></i><span>Fornecedores</span>
-          </a>
-          <a href="{{ url_for('items') }}" class="{% if request.endpoint == 'items' %}active{% endif %}">
-            <i class="fa-solid fa-receipt" aria-hidden="true"></i><span>Itens</span>
-          </a>
           <a href="{{ url_for('orders') }}" class="{% if request.endpoint == 'orders' or request.endpoint == 'orders_manage' %}active{% endif %}">
             <i class="fa-solid fa-box-open" aria-hidden="true"></i><span>Encomendas</span>
-          </a>
-          <a href="{{ url_for('stock') }}" class="{% if request.endpoint == 'stock' %}active{% endif %}">
-            <i class="fa-solid fa-boxes-stacked" aria-hidden="true"></i><span>Stock</span>
           </a>
           <a href="{{ url_for('todo') }}" class="{% if request.endpoint == 'todo' %}active{% endif %}">
             <i class="fa-solid fa-list-check" aria-hidden="true"></i><span>To-Do</span>
@@ -69,6 +60,21 @@
           <a href="{{ url_for('market') }}" class="{% if request.endpoint == 'market' %}active{% endif %}">
             <i class="fa-solid fa-cart-shopping" aria-hidden="true"></i><span>Lista</span>
           </a>
+          {% set more_active = request.endpoint in ['suppliers', 'items', 'stock'] %}
+          <details class="menu-more" {% if more_active %}open{% endif %}>
+            <summary class="{% if more_active %}active{% endif %}">
+              <i class="fa-solid fa-ellipsis" aria-hidden="true"></i><span>Mais</span>
+            </summary>
+            <a href="{{ url_for('suppliers') }}" class="{% if request.endpoint == 'suppliers' %}active{% endif %}">
+              <i class="fa-solid fa-handshake" aria-hidden="true"></i><span>Fornecedores</span>
+            </a>
+            <a href="{{ url_for('items') }}" class="{% if request.endpoint == 'items' %}active{% endif %}">
+              <i class="fa-solid fa-receipt" aria-hidden="true"></i><span>Itens</span>
+            </a>
+            <a href="{{ url_for('stock') }}" class="{% if request.endpoint == 'stock' %}active{% endif %}">
+              <i class="fa-solid fa-boxes-stacked" aria-hidden="true"></i><span>Stock</span>
+            </a>
+          </details>
         </nav>
 
         <a class="logout-link" href="{{ url_for('logout') }}">
@@ -94,12 +100,18 @@
 
     <nav class="mobile-menu" id="mobile-menu" aria-hidden="true">
       <a href="{{ url_for('index') }}"><i class="fa-solid fa-chart-line" aria-hidden="true"></i><span>Painel</span></a>
-      <a href="{{ url_for('suppliers') }}"><i class="fa-solid fa-handshake" aria-hidden="true"></i><span>Fornecedores</span></a>
-      <a href="{{ url_for('items') }}"><i class="fa-solid fa-receipt" aria-hidden="true"></i><span>Itens</span></a>
       <a href="{{ url_for('orders') }}"><i class="fa-solid fa-box-open" aria-hidden="true"></i><span>Encomendas</span></a>
-      <a href="{{ url_for('stock') }}"><i class="fa-solid fa-boxes-stacked" aria-hidden="true"></i><span>Stock</span></a>
       <a href="{{ url_for('todo') }}"><i class="fa-solid fa-list-check" aria-hidden="true"></i><span>To-Do</span></a>
       <a href="{{ url_for('market') }}"><i class="fa-solid fa-cart-shopping" aria-hidden="true"></i><span>Lista</span></a>
+      {% set more_active = request.endpoint in ['suppliers', 'items', 'stock'] %}
+      <details class="menu-more" {% if more_active %}open{% endif %}>
+        <summary class="{% if more_active %}active{% endif %}">
+          <i class="fa-solid fa-ellipsis" aria-hidden="true"></i><span>Mais</span>
+        </summary>
+        <a href="{{ url_for('suppliers') }}"><i class="fa-solid fa-handshake" aria-hidden="true"></i><span>Fornecedores</span></a>
+        <a href="{{ url_for('items') }}"><i class="fa-solid fa-receipt" aria-hidden="true"></i><span>Itens</span></a>
+        <a href="{{ url_for('stock') }}"><i class="fa-solid fa-boxes-stacked" aria-hidden="true"></i><span>Stock</span></a>
+      </details>
       <a href="{{ url_for('logout') }}"><i class="fa-solid fa-right-from-bracket" aria-hidden="true"></i><span>Sair</span></a>
     </nav>
     <div class="mobile-backdrop" id="mobile-backdrop"></div>

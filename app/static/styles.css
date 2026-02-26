@@ -185,6 +185,50 @@ button {
   text-align: center;
 }
 
+.menu-more {
+  display: grid;
+  gap: 4px;
+}
+
+.menu-more summary {
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 11px;
+  border-radius: 11px;
+  color: #374151;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background var(--motion-fast) ease, border-color var(--motion-fast) ease, color var(--motion-fast) ease, transform var(--motion-fast) ease;
+}
+
+.menu-more summary::-webkit-details-marker {
+  display: none;
+}
+
+.menu-more summary:hover {
+  background: #f8fafc;
+  border-color: var(--line);
+  transform: translateX(1px);
+}
+
+.menu-more summary.active {
+  background: #ecfdf3;
+  border-color: #c9f1dc;
+  color: #13633b;
+  font-weight: 600;
+}
+
+.menu-more summary i {
+  width: 16px;
+  text-align: center;
+}
+
+.menu-more > a {
+  margin-left: 14px;
+}
+
 .logout-link {
   margin-top: auto;
 }
@@ -996,6 +1040,64 @@ button.primary:active,
   gap: 7px;
 }
 
+.order-filter-accordion-grid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  align-items: start;
+}
+
+.filter-accordion {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #fff;
+  overflow: hidden;
+  align-self: start;
+}
+
+.filter-accordion summary {
+  list-style: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  cursor: pointer;
+  padding: 10px 12px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.filter-accordion summary::-webkit-details-marker {
+  display: none;
+}
+
+.filter-accordion summary::after {
+  content: "v";
+  font-size: 0.82rem;
+  color: var(--muted);
+  transition: transform var(--motion-fast) ease;
+}
+
+.filter-accordion[open] summary::after {
+  transform: rotate(180deg);
+}
+
+.filter-accordion summary small {
+  margin-left: auto;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 130px;
+}
+
+.filter-accordion .quick-picks {
+  border-top: 1px solid var(--line);
+  padding: 10px 12px 12px;
+}
+
 .check-pill {
   display: inline-flex;
   align-items: center;
@@ -1075,6 +1177,31 @@ button.primary:active,
   color: var(--muted);
 }
 
+.pending-supplier-accordion .pending-card-grid {
+  border-top: 1px solid var(--line);
+  padding: 10px 12px 12px;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
+
+.pending-order-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 8px;
+  align-items: end;
+  min-width: 0;
+}
+
+.pending-order-actions label {
+  font-size: 0.82rem;
+  gap: 4px;
+  min-width: 0;
+}
+
+.pending-order-actions input {
+  padding: 8px 10px;
+  min-width: 0;
+}
+
 .market-order-missing {
   background: #fff7ed;
 }
@@ -1102,6 +1229,44 @@ button.primary:active,
 .order-item-footer {
   display: grid;
   gap: 6px;
+}
+
+.order-mode-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
+}
+
+.order-mode-card {
+  text-align: left;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #fff;
+  padding: 12px;
+  cursor: pointer;
+  display: grid;
+  gap: 4px;
+  color: #374151;
+  transition: border-color var(--motion-fast) ease, box-shadow var(--motion-mid) ease, transform var(--motion-fast) ease;
+}
+
+.order-mode-card strong,
+.order-mode-card small {
+  pointer-events: none;
+}
+
+.order-mode-card small {
+  color: var(--muted);
+}
+
+.order-mode-card:hover {
+  border-color: var(--line-strong);
+  box-shadow: 0 8px 16px rgba(15, 23, 42, 0.06);
+}
+
+.order-mode-card.selected {
+  border-color: #86efac;
+  box-shadow: 0 0 0 3px rgba(34, 160, 107, 0.15);
 }
 
 .order-compose {
@@ -1203,6 +1368,10 @@ button.primary:active,
   transform: translateX(2px);
 }
 
+.mobile-menu .menu-more > a {
+  margin-left: 10px;
+}
+
 .mobile-backdrop {
   position: fixed;
   inset: 0;
@@ -1289,8 +1458,17 @@ button.primary:active,
     grid-template-columns: 1fr;
   }
 
+  .order-filter-accordion-grid {
+    grid-template-columns: 1fr;
+  }
+
   .pending-list-header {
     flex-direction: column;
+    align-items: stretch;
+  }
+
+  .pending-order-actions {
+    grid-template-columns: 1fr;
     align-items: stretch;
   }
 
@@ -1328,3 +1506,4 @@ button.primary:active,
     transition-duration: 0.01ms !important;
   }
 }
+

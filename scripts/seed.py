@@ -2,81 +2,31 @@ import argparse
 import os
 import sqlite3
 import sys
-from datetime import date, timedelta
 
 
 DB_PATH = "data.db"
 
 
 SUPPLIERS = [
-    ("Delta Cafe", "+351 961 578 259", "", "Cafe, cha e afins."),
-    ("Superbock", "+351 961 130 605", "", "Bebidas."),
-    ("Garrafeira Rui Vinhos", "+351 915 321 808", "", "Vinhos."),
-    ("Papel Pak", "+351 960 000 001", "", "Consumiveis e embalagens."),
-    ("Fernando Fernandes", "+351 960 000 002", "", "Descartaveis e limpeza."),
-    ("Pro Gel Cone", "+351 912 851 503", "", "Detergentes."),
-    ("Bio F.F", "+351 960 000 003", "", "Higiene e desinfeccao."),
-    ("Mercado", "", "", "Compras locais de apoio diario."),
-    ("A ti Marquinhas (Docaria)", "", "", "Sobremesas e docaria."),
-    ("Ola", "", "", "Gelados e toppings."),
-    ("Aviludo", "", "", "Produtos alimentares e bar."),
-    ("Delta", "", "", "Cafe, acucar e adocante."),
+    ("Mercado", "", "", ""),
+    ("A ti Marquinhas (Docaria)", "", "", ""),
+    ("Ola", "", "", ""),
+    ("Aviludo", "", "", ""),
+    ("Delta", "", "", ""),
+    ("Superbock", "", "", ""),
+    ("Garrafeira Rui", "", "", ""),
 ]
 
-MARKET_CATALOG = [
-    ("Tomate", "Legumes e Verduras", "Armazem", "kg"),
-    ("Cebola", "Legumes e Verduras", "Armazem", "kg"),
-    ("Alho", "Legumes e Verduras", "Armazem", "kg"),
-    ("Batata", "Legumes e Verduras", "Armazem", "kg"),
-    ("Cenoura", "Legumes e Verduras", "Armazem", "kg"),
-    ("Curgete", "Legumes e Verduras", "Armazem", "kg"),
-    ("Beringela", "Legumes e Verduras", "Armazem", "kg"),
-    ("Pimento Verde", "Legumes e Verduras", "Armazem", "kg"),
-    ("Pimento Vermelho", "Legumes e Verduras", "Armazem", "kg"),
-    ("Alface", "Legumes e Verduras", "Armazem", "un"),
-    ("Rucula", "Legumes e Verduras", "Armazem", "un"),
-    ("Espinafres", "Legumes e Verduras", "Armazem", "kg"),
-    ("Cogumelos Frescos", "Legumes e Verduras", "Armazem", "kg"),
-    ("Brocolos", "Legumes e Verduras", "Armazem", "kg"),
-    ("Couve Flor", "Legumes e Verduras", "Armazem", "kg"),
-    ("Pepino", "Legumes e Verduras", "Armazem", "kg"),
-    ("Lima", "Frutas", "Armazem", "kg"),
-    ("Laranja", "Frutas", "Armazem", "kg"),
-    ("Maca", "Frutas", "Armazem", "kg"),
-    ("Pera", "Frutas", "Armazem", "kg"),
-    ("Banana", "Frutas", "Armazem", "kg"),
-    ("Morango", "Frutas", "Armazem", "kg"),
-    ("Abacaxi", "Frutas", "Armazem", "un"),
-    ("Maracuja", "Frutas", "Armazem", "kg"),
-    ("Framboesa", "Frutas", "Armazem", "kg"),
-    ("Mirtilo", "Frutas", "Armazem", "kg"),
-    ("Manga", "Frutas", "Armazem", "kg"),
-    ("Abacate", "Frutas", "Armazem", "kg"),
-    ("Salsa", "Mercearia", "Armazem", "un"),
-    ("Coentros", "Mercearia", "Armazem", "un"),
-    ("Cebolinho", "Mercearia", "Armazem", "un"),
-    ("Manjericao", "Mercearia", "Armazem", "un"),
-    ("Alecrim", "Mercearia", "Armazem", "un"),
-    ("Louro", "Mercearia", "Armazem", "un"),
-    ("Oreganos", "Mercearia", "Despensa", "un"),
-    ("Canela em Po", "Mercearia", "Despensa", "un"),
-    ("Cominhos", "Mercearia", "Despensa", "un"),
-    ("Paprica Doce", "Mercearia", "Despensa", "un"),
-    ("Pimenta Preta", "Mercearia", "Despensa", "un"),
-    ("Noz Moscada", "Mercearia", "Despensa", "un"),
-    ("Vinagre Balsamico", "Mercearia", "Despensa", "un"),
-    ("Azeite Virgem Extra", "Mercearia", "Despensa", "un"),
-]
 
-REQUESTED_CATALOG = [
-    ("Mercado", "Alfinete", "Bar", "Diversos do bar", "un"),
-    ("Mercado", "Agrafos", "Bar", "Diversos do bar", "un"),
-    ("Mercado", "Caneta esferografica", "Bar", "Diversos do bar", "un"),
-    ("Mercado", "Caneta Marcador", "Bar", "Diversos do bar", "un"),
-    ("Mercado", "Corretor", "Bar", "Diversos do bar", "un"),
-    ("Mercado", "Papel A4", "Bar", "Diversos do bar", "un"),
-    ("Mercado", "Rebucados", "Bar", "Diversos do bar", "un"),
-    ("Mercado", "Palito de dente", "Bar", "Diversos do bar", "un"),
+ITEMS = [
+    ("Mercado", "Alfinete", "Bar", "Diversos Bar", "un"),
+    ("Mercado", "Agrafos", "Bar", "Diversos Bar", "un"),
+    ("Mercado", "Caneta esferografica", "Bar", "Diversos Bar", "un"),
+    ("Mercado", "Caneta Marcador", "Bar", "Diversos Bar", "un"),
+    ("Mercado", "Corretor", "Bar", "Diversos Bar", "un"),
+    ("Mercado", "Papel A4", "Bar", "Diversos Bar", "un"),
+    ("Mercado", "Rebucados", "Bar", "Diversos Bar", "un"),
+    ("Mercado", "Palito de dente", "Bar", "Diversos Bar", "un"),
     ("Mercado", "Baloes", "Bar", "festas/eventos", "un"),
     ("Mercado", "Confetes", "Bar", "festas/eventos", "un"),
     ("Mercado", "Velas de aniversario", "Bar", "festas/eventos", "un"),
@@ -117,6 +67,8 @@ REQUESTED_CATALOG = [
     ("A ti Marquinhas (Docaria)", "Tarte de batata doce", "Sobremesas", "Sobremesas", "un"),
     ("Mercado", "Chantilly", "Sobremesas", "Sobremesas", "un"),
     ("Mercado", "Morangos", "Sobremesas", "Sobremesas", "kg"),
+    ("Mercado", "Frutos Silvestres", "Sobremesas", "Sobremesas", "kg"),
+    ("Mercado", "Hortela", "Sobremesas", "Sobremesas", "un"),
     ("Mercado", "Chocolate em po", "Sobremesas", "Sobremesas", "kg"),
     ("Mercado", "Cacau em po", "Sobremesas", "Sobremesas", "kg"),
     ("Mercado", "Acucar de confeiteiro", "Sobremesas", "Sobremesas", "kg"),
@@ -137,7 +89,7 @@ REQUESTED_CATALOG = [
     ("Ola", "Magnum Chocolate Branco", "Sobremesas", "Sobremesas", "un"),
     ("Ola", "Cornetto Pistachio", "Sobremesas", "Sobremesas", "un"),
     ("Ola", "Cornetto Tropical Manga", "Sobremesas", "Sobremesas", "un"),
-    ("Ola", "Cornetto Chocnball", "Sobremesas", "Sobremesas", "un"),
+    ("Ola", "Cornetto Chocn'ball", "Sobremesas", "Sobremesas", "un"),
     ("Ola", "Cornetto Morango", "Sobremesas", "Sobremesas", "un"),
     ("Ola", "Cornetto Brigadeiro", "Sobremesas", "Sobremesas", "un"),
     ("Ola", "Cornetto Classico", "Sobremesas", "Sobremesas", "un"),
@@ -166,31 +118,99 @@ REQUESTED_CATALOG = [
     ("Delta", "Cafe Gold", "Cafetaria", "Cafetaria", "kg"),
     ("Delta", "Acucar", "Cafetaria", "Cafetaria", "kg"),
     ("Delta", "Adocante", "Cafetaria", "Cafetaria", "un"),
-]
-
-
-STOCK = [
-    ("Rolo de cozinha", "un", 8, 4),
-    ("Papel higienico", "cx", 2, 3),
-    ("Detergente", "un", 4, 2),
-    ("Toalitas de limao", "cx", 1, 2),
-]
-
-
-def _today(days_ago=0):
-    return (date.today() - timedelta(days=days_ago)).isoformat()
-
-
-# supplier_name, item_name, qty, status, total, ordered_at
-ORDERS = [
-    ("Delta Cafe", "Cafe Grao", 8, "ordered", 120.0, _today(6)),
-    ("Garrafeira Rui Vinhos", "Esteva Tinto", 12, "pending", 210.0, _today(2)),
-    ("Papel Pak", "Rolos Termicos", 6, "ordered", 36.0, _today(7)),
-    ("Fernando Fernandes", "Sacos de Lixo 50L", 10, "pending", 85.0, _today(1)),
-    ("Mercado", "Limoes Frescos", 1, "purchased", 0.0, _today(1)),
-    ("Mercado", "Hortela Fresca", 2, "pending", 0.0, _today(0)),
-    ("Mercado", "Gelo Saco 2kg", 3, "pending", 0.0, _today(0)),
-    ("Mercado", "Guardanapos Bar", 4, "pending", 0.0, _today(2)),
+    ("Superbock", "Cerveja de garrafa Superbock", "Bebidas", "Bebidas", "un"),
+    ("Superbock", "Cerveja de garrafa Stout Superbock", "Bebidas", "Bebidas", "un"),
+    ("Superbock", "Cerveja de garrafa sem alcool Superbock", "Bebidas", "Bebidas", "un"),
+    ("Superbock", "Coca-cola lata", "Bebidas", "Bebidas", "un"),
+    ("Superbock", "Agua Vitalis 75cl", "Bebidas", "Bebidas", "un"),
+    ("Superbock", "Agua Vitalis 1,5l", "Bebidas", "Bebidas", "un"),
+    ("Superbock", "Agua Vitalis 33cl", "Bebidas", "Bebidas", "un"),
+    ("Superbock", "Agua das Pedras 75cl", "Bebidas", "Bebidas", "un"),
+    ("Superbock", "Coca Cola zero Garrafa", "Bebidas", "Bebidas", "un"),
+    ("Superbock", "Coca Cola Garrafa", "Bebidas", "Bebidas", "un"),
+    ("Superbock", "Sprite Garrafa", "Bebidas", "Bebidas", "un"),
+    ("Superbock", "Fanta Laranja Garrafa", "Bebidas", "Bebidas", "un"),
+    ("Superbock", "Somersby", "Bebidas", "Bebidas", "un"),
+    ("Superbock", "Agua Castelo", "Bebidas", "Bebidas", "un"),
+    ("Superbock", "Agua das Pedras 25cl", "Bebidas", "Bebidas", "un"),
+    ("Superbock", "Agua das Pedras de limao 25cl", "Bebidas", "Bebidas", "un"),
+    ("Superbock", "Lipton Ice tea Pessego", "Bebidas", "Bebidas", "un"),
+    ("Superbock", "Lipton Ice tea Limao", "Bebidas", "Bebidas", "un"),
+    ("Superbock", "Lipton Ice tea Manga", "Bebidas", "Bebidas", "un"),
+    ("Superbock", "Compal Manga (nectar)", "Bebidas", "Bebidas", "un"),
+    ("Superbock", "Compal Manga Laranja (nectar)", "Bebidas", "Bebidas", "un"),
+    ("Superbock", "Compal Laranja (nectar)", "Bebidas", "Bebidas", "un"),
+    ("Superbock", "Compal Pessego (nectar)", "Bebidas", "Bebidas", "un"),
+    ("Superbock", "Compal Maca (nectar)", "Bebidas", "Bebidas", "un"),
+    ("Superbock", "Agua Tonica Schweppes 20cl", "Bebidas", "Bebidas", "un"),
+    ("Superbock", "Ucal 25cl", "Bebidas", "Bebidas", "un"),
+    ("Superbock", "Barril de cerveja 30L", "Bebidas", "Bebidas", "un"),
+    ("Superbock", "Agua Caramulo 6L", "Bebidas", "Bebidas", "un"),
+    ("Superbock", "Capataz Tinto 5L", "Vinhos", "Vinhos", "un"),
+    ("Superbock", "Capataz Branco 5L", "Vinhos", "Vinhos", "un"),
+    ("Superbock", "Mazouco Tinto", "Vinhos", "Vinhos", "un"),
+    ("Superbock", "Monte das Servas Tinto", "Vinhos", "Vinhos", "un"),
+    ("Superbock", "Monte das Servas Branco", "Vinhos", "Vinhos", "un"),
+    ("Superbock", "Planura Tinto", "Vinhos", "Vinhos", "un"),
+    ("Superbock", "Rossio Tinto", "Vinhos", "Vinhos", "un"),
+    ("Superbock", "Rossio Branco", "Vinhos", "Vinhos", "un"),
+    ("Superbock", "Rossio Rose", "Vinhos", "Vinhos", "un"),
+    ("Superbock", "Tiago Cabaco .Com Tinto", "Vinhos", "Vinhos", "un"),
+    ("Superbock", "Tiago Cabaco .Com Branco", "Vinhos", "Vinhos", "un"),
+    ("Superbock", "Tiago Cabaco .Com Rose", "Vinhos", "Vinhos", "un"),
+    ("Superbock", "Tiago Cabaco Vinhas Velhas Branco", "Vinhos", "Vinhos", "un"),
+    ("Superbock", "Tiago Cabaco Vinhas Velhas Tinto", "Vinhos", "Vinhos", "un"),
+    ("Garrafeira Rui", "Casal Garcia verde", "Vinhos", "Vinhos", "un"),
+    ("Garrafeira Rui", "Quinta de Aveleda verde", "Vinhos", "Vinhos", "un"),
+    ("Garrafeira Rui", "Mateus Rose", "Vinhos", "Vinhos", "un"),
+    ("Garrafeira Rui", "Esteva Tinto", "Vinhos", "Vinhos", "un"),
+    ("Garrafeira Rui", "Cabriz Tinto", "Vinhos", "Vinhos", "un"),
+    ("Garrafeira Rui", "Melange a Trois Tinto", "Vinhos", "Vinhos", "un"),
+    ("Garrafeira Rui", "Monte Fuscaz Rose", "Vinhos", "Vinhos", "un"),
+    ("Garrafeira Rui", "Monte Fuscaz Branco", "Vinhos", "Vinhos", "un"),
+    ("Garrafeira Rui", "Monte Fuscaz Tinto", "Vinhos", "Vinhos", "un"),
+    ("Garrafeira Rui", "Villa Alvor tinto", "Vinhos", "Vinhos", "un"),
+    ("Garrafeira Rui", "Villa Alvor Branco", "Vinhos", "Vinhos", "un"),
+    ("Garrafeira Rui", "BSE Branco", "Vinhos", "Vinhos", "un"),
+    ("Mercado", "Cachaca 51", "Alcool", "Alcool", "un"),
+    ("Mercado", "Bombay Gin", "Alcool", "Alcool", "un"),
+    ("Mercado", "Gordon's Gin", "Alcool", "Alcool", "un"),
+    ("Mercado", "Gordon's Pink Gin", "Alcool", "Alcool", "un"),
+    ("Mercado", "Bacardi Rum", "Alcool", "Alcool", "un"),
+    ("Mercado", "Smirnoff Vodka", "Alcool", "Alcool", "un"),
+    ("Mercado", "Tequila", "Alcool", "Alcool", "un"),
+    ("Mercado", "Aldeia Velha aguardente", "Alcool", "Alcool", "un"),
+    ("Mercado", "Ponte de marante aguardente", "Alcool", "Alcool", "un"),
+    ("Mercado", "Castelo Silves aguardadente de medronho", "Alcool", "Alcool", "un"),
+    ("Mercado", "Fernet Branca", "Alcool", "Alcool", "un"),
+    ("Mercado", "Baileys", "Alcool", "Alcool", "un"),
+    ("Mercado", "Berneroy Calvados", "Alcool", "Alcool", "un"),
+    ("Mercado", "Cointreau", "Alcool", "Alcool", "un"),
+    ("Mercado", "Grand Marnier", "Alcool", "Alcool", "un"),
+    ("Mercado", "Malibu", "Alcool", "Alcool", "un"),
+    ("Mercado", "Ricard", "Alcool", "Alcool", "un"),
+    ("Mercado", "Tia Maria Coffe", "Alcool", "Alcool", "un"),
+    ("Mercado", "Licor Beirao", "Alcool", "Alcool", "un"),
+    ("Mercado", "Porto Tinto", "Alcool", "Alcool", "un"),
+    ("Mercado", "Porto Branco", "Alcool", "Alcool", "un"),
+    ("Mercado", "Macieira", "Alcool", "Alcool", "un"),
+    ("Mercado", "Dom Ramires", "Alcool", "Alcool", "un"),
+    ("Mercado", "Groselha", "Alcool", "Alcool", "un"),
+    ("Mercado", "Dom Cristina", "Alcool", "Alcool", "un"),
+    ("Mercado", "Captain Morgan Rum", "Alcool", "Alcool", "un"),
+    ("Mercado", "Cutty Sark", "Alcool", "Alcool", "un"),
+    ("Mercado", "Grants", "Alcool", "Alcool", "un"),
+    ("Mercado", "J&B JB", "Alcool", "Alcool", "un"),
+    ("Mercado", "J&B 15 anos JB", "Alcool", "Alcool", "un"),
+    ("Mercado", "Golden Loch", "Alcool", "Alcool", "un"),
+    ("Mercado", "White Horse", "Alcool", "Alcool", "un"),
+    ("Mercado", "Ballantines", "Alcool", "Alcool", "un"),
+    ("Mercado", "Jack daniels", "Alcool", "Alcool", "un"),
+    ("Mercado", "The Famous Grouse", "Alcool", "Alcool", "un"),
+    ("Mercado", "Jameson", "Alcool", "Alcool", "un"),
+    ("Mercado", "William Lawson", "Alcool", "Alcool", "un"),
+    ("Mercado", "Martini Bianco (Branco)", "Alcool", "Alcool", "un"),
+    ("Mercado", "Martini Rosso (Roxo)", "Alcool", "Alcool", "un"),
 ]
 
 
@@ -207,11 +227,16 @@ def seed_db(reset=False, db_path=DB_PATH):
     if reset:
         conn.executescript(
             """
+            DROP TABLE IF EXISTS todo_order_links;
+            DROP TABLE IF EXISTS todo_check_entries;
+            DROP TABLE IF EXISTS todo_checks;
+            DROP TABLE IF EXISTS todo_catalog;
+            DROP TABLE IF EXISTS notices;
+            DROP TABLE IF EXISTS market_list;
             DROP TABLE IF EXISTS orders;
             DROP TABLE IF EXISTS items;
-            DROP TABLE IF EXISTS suppliers;
             DROP TABLE IF EXISTS stock_items;
-            DROP TABLE IF EXISTS market_list;
+            DROP TABLE IF EXISTS suppliers;
             DROP TABLE IF EXISTS users;
             """
         )
@@ -238,18 +263,6 @@ def seed_db(reset=False, db_path=DB_PATH):
         for row in conn.execute("SELECT id, name FROM suppliers").fetchall()
     }
 
-    items_existing = conn.execute("SELECT COUNT(*) AS c FROM items").fetchone()["c"]
-    if items_existing == 0:
-        for supplier_name, name, item_type, item_subtype, unit in ITEMS:
-            conn.execute(
-                """
-                INSERT INTO items (supplier_id, name, item_type, item_subtype, unit, active)
-                VALUES (?, ?, ?, ?, ?, 1)
-                """,
-                (supplier_map.get(supplier_name), name, item_type, item_subtype, unit),
-            )
-
-    # Ensure requested catalog items exist even on non-empty databases.
     existing_item_keys = {
         (
             row["supplier_id"],
@@ -262,11 +275,12 @@ def seed_db(reset=False, db_path=DB_PATH):
             "SELECT supplier_id, name, item_type, item_subtype, unit FROM items"
         ).fetchall()
     }
-    requested_rows = [("Mercado", *row) for row in MARKET_CATALOG] + REQUESTED_CATALOG
-    for supplier_name, name, item_type, item_subtype, unit in requested_rows:
+
+    for supplier_name, name, item_type, item_subtype, unit in ITEMS:
         supplier_id = supplier_map.get(supplier_name)
         if not supplier_id:
             continue
+
         key = (
             supplier_id,
             name.strip().lower(),
@@ -276,6 +290,7 @@ def seed_db(reset=False, db_path=DB_PATH):
         )
         if key in existing_item_keys:
             continue
+
         conn.execute(
             """
             INSERT INTO items (supplier_id, name, item_type, item_subtype, unit, active)
@@ -284,53 +299,6 @@ def seed_db(reset=False, db_path=DB_PATH):
             (supplier_id, name, item_type, item_subtype, unit),
         )
         existing_item_keys.add(key)
-
-    stock_existing = conn.execute("SELECT COUNT(*) AS c FROM stock_items").fetchone()["c"]
-    if stock_existing == 0:
-        for name, unit, qty, low in STOCK:
-            conn.execute(
-                "INSERT INTO stock_items (name, unit, qty, low_threshold) VALUES (?, ?, ?, ?)",
-                (name, unit, qty, low),
-            )
-
-    orders_existing = conn.execute("SELECT COUNT(*) AS c FROM orders").fetchone()["c"]
-    if orders_existing == 0:
-        item_map = {
-            row["name"]: (row["id"], row["unit"], row["supplier_id"])
-            for row in conn.execute("SELECT id, name, unit, supplier_id FROM items").fetchall()
-        }
-        for supplier_name, item_name, qty, status, total, ordered_at in ORDERS:
-            supplier_id = supplier_map.get(supplier_name)
-            item_meta = item_map.get(item_name)
-            if not supplier_id or not item_meta:
-                continue
-            item_id, unit, _ = item_meta
-            cur = conn.execute(
-                """
-                INSERT INTO orders (supplier_id, item_id, qty, status, total, ordered_at)
-                VALUES (?, ?, ?, ?, ?, ?)
-                """,
-                (supplier_id, item_id, qty, status, total, ordered_at),
-            )
-            order_id = cur.lastrowid
-
-            # Refined pattern: each Mercado order also creates an explicit market_list event row.
-            if supplier_name.lower() == "mercado":
-                checked = 1 if status == "purchased" else 0
-                purchased_at = ordered_at if checked else None
-                qty_text = f"{qty:.2f}".rstrip("0").rstrip(".")
-                if unit:
-                    qty_text = f"{qty_text} {unit}"
-                conn.execute(
-                    """
-                    INSERT INTO market_list (
-                        item, qty, notes, checked,
-                        item_id, order_id, qty_value, unit, listed_at, purchased_at
-                    )
-                    VALUES (?, ?, '', ?, ?, ?, ?, ?, ?, ?)
-                    """,
-                    (item_name, qty_text, checked, item_id, order_id, qty, unit, ordered_at, purchased_at),
-                )
 
     conn.commit()
     conn.close()
@@ -355,3 +323,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
