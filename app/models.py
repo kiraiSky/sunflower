@@ -73,6 +73,13 @@ CREATE TABLE IF NOT EXISTS notices (
     FOREIGN KEY (created_by) REFERENCES users (id)
 );
 
+CREATE TABLE IF NOT EXISTS todo_areas (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    area_key TEXT NOT NULL UNIQUE,
+    area_label TEXT NOT NULL,
+    active INTEGER NOT NULL DEFAULT 1
+);
+
 CREATE TABLE IF NOT EXISTS todo_catalog (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     area TEXT NOT NULL,
@@ -128,6 +135,7 @@ def init_db(app):
         conn.executescript(SCHEMA)
         migrate_db(conn)
         ensure_admin(conn)
+        ensure_todo_areas(conn)
         ensure_todo_catalog(conn)
 
 
@@ -167,6 +175,32 @@ def migrate_db(conn):
         conn.execute("ALTER TABLE market_list ADD COLUMN listed_at TEXT")
     if "purchased_at" not in market_col_names:
         conn.execute("ALTER TABLE market_list ADD COLUMN purchased_at TEXT")
+
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS todo_areas (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            area_key TEXT NOT NULL UNIQUE,
+            area_label TEXT NOT NULL,
+            active INTEGER NOT NULL DEFAULT 1
+        )
+        """
+    )
+
+
+def ensure_todo_areas(conn):
+    defaults = [
+        ("bar", "Bar"),
+        ("cozinha", "Cozinha"),
+    ]
+    for area_key, area_label in defaults:
+        conn.execute(
+            """
+            INSERT OR IGNORE INTO todo_areas (area_key, area_label, active)
+            VALUES (?, ?, 1)
+            """,
+            (area_key, area_label),
+        )
 
 
 def ensure_todo_catalog(conn):

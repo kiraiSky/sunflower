@@ -16,6 +16,50 @@
       </a>
       {% endfor %}
     </div>
+    {% if can_manage_todo_catalog %}
+    <details class="filter-accordion">
+      <summary>
+        <span>Gestor do checklist</span>
+        <small>Zonas e itens</small>
+      </summary>
+      <form method="post" action="{{ url_for('todo_catalog_manage') }}" class="form grid-form" id="todo-catalog-manage-form">
+        <input type="hidden" name="area" value="{{ selected_area }}" />
+        <label>
+          Zona/Distrito
+          <input type="text" name="district" id="todo-manage-district" required placeholder="Ex.: Balcao" />
+        </label>
+        <label>
+          Editar zona existente
+          <select id="todo-manage-district-preset">
+            <option value="">Nova zona</option>
+            {% for district_name, _entries in districts %}
+            <option value="{{ district_name }}">{{ district_name }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <label class="full">
+          Procurar item
+          <input type="search" id="todo-manage-search" placeholder="Filtrar itens..." />
+        </label>
+        <div class="full todo-item-grid" id="todo-manage-item-grid">
+          {% for item_name in available_item_names %}
+          <label class="todo-item-option">
+            <input type="checkbox" name="item_names" value="{{ item_name }}" data-manage-item />
+            <span>{{ item_name }}</span>
+          </label>
+          {% endfor %}
+        </div>
+        <div class="full step-actions">
+          <button class="primary" type="submit" data-sound="save">Guardar zona</button>
+        </div>
+      </form>
+      <form method="post" action="{{ url_for('todo_catalog_delete') }}" class="form grid-form" id="todo-catalog-delete-form">
+        <input type="hidden" name="area" value="{{ selected_area }}" />
+        <input type="hidden" name="district" id="todo-delete-district" />
+        <button class="pill warn hidden" type="submit" id="todo-delete-district-btn">Remover zona selecionada</button>
+      </form>
+    </details>
+    {% endif %}
   </section>
 
   <section class="panel">
@@ -165,6 +209,60 @@
         });
         hiddenInput.value = JSON.stringify(payload);
       });
+    })();
+
+    (() => {
+      const map = {{ catalog_manage_map|tojson }};
+      const preset = document.getElementById("todo-manage-district-preset");
+      const districtInput = document.getElementById("todo-manage-district");
+      const deleteInput = document.getElementById("todo-delete-district");
+      const deleteBtn = document.getElementById("todo-delete-district-btn");
+      const search = document.getElementById("todo-manage-search");
+      const options = Array.from(document.querySelectorAll("[data-manage-item]"));
+      if (!preset || !districtInput || options.length === 0) return;
+
+      const syncOptionStyles = () => {
+        options.forEach((input) => {
+          const wrap = input.closest(".todo-item-option");
+          if (!wrap) return;
+          wrap.classList.toggle("selected", input.checked);
+        });
+      };
+
+      const applyDistrict = (district) => {
+        districtInput.value = district || "";
+        deleteInput && (deleteInput.value = district || "");
+        if (deleteBtn) deleteBtn.classList.toggle("hidden", !district);
+        const selectedItems = new Set((district && map[district]) || []);
+        options.forEach((input) => {
+          input.checked = selectedItems.has(input.value);
+        });
+        syncOptionStyles();
+      };
+
+      preset.addEventListener("change", () => {
+        applyDistrict(preset.value || "");
+      });
+
+      districtInput.addEventListener("input", () => {
+        if (!preset.value) return;
+        if (districtInput.value.trim() === preset.value) return;
+        preset.value = "";
+        applyDistrict("");
+      });
+
+      search?.addEventListener("input", () => {
+        const q = (search.value || "").trim().toLowerCase();
+        options.forEach((input) => {
+          const wrap = input.closest(".todo-item-option");
+          if (!wrap) return;
+          const text = (input.value || "").toLowerCase();
+          wrap.classList.toggle("hidden", !!q && !text.includes(q));
+        });
+      });
+
+      options.forEach((input) => input.addEventListener("change", syncOptionStyles));
+      syncOptionStyles();
     })();
   </script>
 {% endblock %}

@@ -1098,6 +1098,11 @@ button.primary:active,
   padding: 10px 12px 12px;
 }
 
+.filter-accordion > form {
+  border-top: 1px solid var(--line);
+  padding: 10px 12px 12px;
+}
+
 .check-pill {
   display: inline-flex;
   align-items: center;
